@@ -133,7 +133,7 @@ decode_arguments(Bin, [$F|T], Acc) ->
 decode_arguments(Bin, [$N|T], Acc) ->
     decode_arguments(Bin, T, [null|Acc]);
 decode_arguments(Bin, [$I|T], Acc) ->
-    decode_arguments(Bin, T, [infinity|Acc]);
+    decode_arguments(Bin, T, [impulse|Acc]);
 decode_arguments(Bin, [$[|T], Acc) ->
     {Array, RestBin, RestTypes} = decode_arguments(Bin, T, []),
     decode_arguments(RestBin, RestTypes, [Array|Acc]);
