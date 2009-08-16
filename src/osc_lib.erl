@@ -131,7 +131,7 @@ decode_arguments(Bin, [$T|T], Acc) ->
 decode_arguments(Bin, [$F|T], Acc) ->
     decode_arguments(Bin, T, [false|Acc]);
 decode_arguments(Bin, [$N|T], Acc) ->
-    decode_arguments(Bin, T, [nil|Acc]);
+    decode_arguments(Bin, T, [null|Acc]);
 decode_arguments(Bin, [$I|T], Acc) ->
     decode_arguments(Bin, T, [infinity|Acc]);
 decode_arguments(Bin, [$[|T], Acc) ->
