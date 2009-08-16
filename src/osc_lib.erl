@@ -42,8 +42,8 @@ decode_packet(<<"/", _/binary>> = Bin) ->
 
 decode_time(<<1:64>>) ->
     immediately;
-decode_time(<<Integer:32, Fraction:32>>) ->
-    Integer bsr Fraction.
+decode_time(<<Seconds:32, Fractions:32>>) ->
+    Seconds bsr Fractions.
 
 decode_string(Bin) ->
     decode_string(Bin, []).
