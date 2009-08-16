@@ -1,0 +1,11 @@
+%% -*-Erlang-*-
+{application, osc,
+ [{description, "Open Sound Control Application"},
+  {vsn, "@VERSION@"},
+  {modules, [osc_app, osc_sup, osc_lib, osc_server]},
+  {registered, [osc_sup, osc_server]},
+  {applications, [kernel, stdlib]},
+  {mod, {osc_app, []}},
+  {env, []}
+ ]}.
+%% vim: set filetype=erlang :
