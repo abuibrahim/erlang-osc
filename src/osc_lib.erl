@@ -38,7 +38,7 @@ decode_bundle(<<Size:32, Bin:Size/binary, Rest/binary>>, Acc) ->
 decode_time(<<1:64>>) ->
     immediately;
 decode_time(<<Seconds:32, Fractions:32>>) ->
-    Seconds bsr Fractions.
+    {Seconds, Fractions}.
 
 decode_string(Bin) ->
     decode_string(Bin, []).
@@ -96,31 +96,31 @@ decode_arguments(Bin, Types) ->
 
 decode_arguments(Rest, [], Acc) ->
     {lists:reverse(Acc), Rest};
-decode_arguments(<<Arg:32, Rest/binary>>, [$i|T], Acc) ->
-    decode_arguments(Rest, T, [Arg|Acc]);
-decode_arguments(<<Arg:32/float, Rest/binary>>, [$f|T], Acc) ->
-    decode_arguments(Rest, T, [Arg|Acc]);
+decode_arguments(<<Int32:32, Rest/binary>>, [$i|T], Acc) ->
+    decode_arguments(Rest, T, [Int32|Acc]);
+decode_arguments(<<Float:32/float, Rest/binary>>, [$f|T], Acc) ->
+    decode_arguments(Rest, T, [Float|Acc]);
 decode_arguments(Bin, [$s|T], Acc) ->
-    {Arg, Rest} = decode_string(Bin),
-    decode_arguments(Rest, T, [Arg|Acc]);
+    {String, Rest} = decode_string(Bin),
+    decode_arguments(Rest, T, [String|Acc]);
 decode_arguments(Bin, [$b|T], Acc) ->
-    {Arg, Rest} = decode_blob(Bin),
-    decode_arguments(Rest, T, [Arg|Acc]);
-decode_arguments(<<Arg:64, Rest/binary>>, [$h|T], Acc) ->
-    decode_arguments(Rest, T, [Arg|Acc]);
-decode_arguments(<<Arg:8/binary, Rest/binary>>, [$t|T], Acc) ->
-    decode_arguments(Rest, T, [decode_time(Arg)|Acc]);
-decode_arguments(<<Arg:64/float, Rest/binary>>, [$d|T], Acc) ->
-    decode_arguments(Rest, T, [Arg|Acc]);
+    {Blob, Rest} = decode_blob(Bin),
+    decode_arguments(Rest, T, [Blob|Acc]);
+decode_arguments(<<Int64:64, Rest/binary>>, [$h|T], Acc) ->
+    decode_arguments(Rest, T, [Int64|Acc]);
+decode_arguments(<<Time:8/binary, Rest/binary>>, [$t|T], Acc) ->
+    decode_arguments(Rest, T, [decode_time(Time)|Acc]);
+decode_arguments(<<Double:64/float, Rest/binary>>, [$d|T], Acc) ->
+    decode_arguments(Rest, T, [Double|Acc]);
 decode_arguments(Bin, [$S|T], Acc) ->
-    {Arg, Rest} = decode_string(Bin),
-    decode_arguments(Rest, T, [list_to_atom(Arg)|Acc]);
-decode_arguments(<<Arg:32, Rest/binary>>, [$c|T], Acc) ->
-    decode_arguments(Rest, T, [Arg|Acc]);
-decode_arguments(<<Arg:32, Rest/binary>>, [$r|T], Acc) ->
-    decode_arguments(Rest, T, [Arg|Acc]);
-decode_arguments(<<Arg:32, Rest/binary>>, [$m|T], Acc) ->
-    decode_arguments(Rest, T, [Arg|Acc]);
+    {Symbol, Rest} = decode_string(Bin),
+    decode_arguments(Rest, T, [list_to_atom(Symbol)|Acc]);
+decode_arguments(<<Char:32, Rest/binary>>, [$c|T], Acc) ->
+    decode_arguments(Rest, T, [Char|Acc]);
+decode_arguments(<<R, G, B, A, Rest/binary>>, [$r|T], Acc) ->
+    decode_arguments(Rest, T, [{R,G,B,A}|Acc]);
+decode_arguments(<<Port, Status, Data1, Data2, Rest/binary>>, [$m|T], Acc) ->
+    decode_arguments(Rest, T, [{Port,Status,Data1,Data2}|Acc]);
 decode_arguments(Bin, [$T|T], Acc) ->
     decode_arguments(Bin, T, [true|Acc]);
 decode_arguments(Bin, [$F|T], Acc) ->
