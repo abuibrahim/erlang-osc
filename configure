@@ -563,7 +563,9 @@ ERLANG_LIB_VER_stdlib
 ERLANG_LIB_DIR_stdlib
 ERLANG_LIB_VER_kernel
 ERLANG_LIB_DIR_kernel
+ERLANG_ERTS_VER
 ERLANG_LIB_DIR
+ERLANG_ROOT_DIR
 ERL
 ac_prefix_program
 ERLCFLAGS
@@ -2554,6 +2556,58 @@ if test "$ERL" = "not found"; then
 fi
 
 
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for Erlang/OTP root directory" >&5
+$as_echo_n "checking for Erlang/OTP root directory... " >&6; }
+if test "${ac_cv_erlang_root_dir+set}" = set; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_ext=erl
+ac_compile='$ERLC $ERLCFLAGS -b beam conftest.$ac_ext >&5'
+ac_link='$ERLC $ERLCFLAGS -b beam conftest.$ac_ext >&5 ; echo "#!/bin/sh" > conftest$ac_exeext ; $as_echo "\"$ERL\" -run conftest start -run init stop -noshell" >> conftest$ac_exeext ; chmod +x conftest$ac_exeext'
+     if test "$cross_compiling" = yes; then :
+  { { $as_echo "$as_me:${as_lineno-$LINENO}: error: in \`$ac_pwd':" >&5
+$as_echo "$as_me: error: in \`$ac_pwd':" >&2;}
+as_fn_error "cannot run test program while cross compiling
+See \`config.log' for more details." "$LINENO" 5; }
+else
+  cat > conftest.$ac_ext <<_ACEOF
+-module(conftest).
+-export([start/0]).
+
+start() ->
+	    RootDir = code:root_dir(),
+	    file:write_file("conftest.out", RootDir),
+	    ReturnValue = 0,
+	    halt(ReturnValue)
+.
+
+_ACEOF
+if ac_fn_erl_try_run "$LINENO"; then :
+  ac_cv_erlang_root_dir=`cat conftest.out`
+	 rm -f conftest.out
+else
+  rm -f conftest.out
+	 { { $as_echo "$as_me:${as_lineno-$LINENO}: error: in \`$ac_pwd':" >&5
+$as_echo "$as_me: error: in \`$ac_pwd':" >&2;}
+as_fn_error "test Erlang program execution failed
+See \`config.log' for more details." "$LINENO" 5; }
+fi
+rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
+  conftest.$ac_objext conftest.beam conftest.$ac_ext
+fi
+
+     ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_erlang_root_dir" >&5
+$as_echo "$ac_cv_erlang_root_dir" >&6; }
+ERLANG_ROOT_DIR=$ac_cv_erlang_root_dir
+
+
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for Erlang/OTP library base directory" >&5
 $as_echo_n "checking for Erlang/OTP library base directory... " >&6; }
 if test "${ac_cv_erlang_lib_dir+set}" = set; then :
@@ -2604,6 +2658,58 @@ fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_erlang_lib_dir" >&5
 $as_echo "$ac_cv_erlang_lib_dir" >&6; }
 ERLANG_LIB_DIR=$ac_cv_erlang_lib_dir
+
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for Erlang/OTP ERTS version" >&5
+$as_echo_n "checking for Erlang/OTP ERTS version... " >&6; }
+if test "${ac_cv_erlang_erts_ver+set}" = set; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_ext=erl
+ac_compile='$ERLC $ERLCFLAGS -b beam conftest.$ac_ext >&5'
+ac_link='$ERLC $ERLCFLAGS -b beam conftest.$ac_ext >&5 ; echo "#!/bin/sh" > conftest$ac_exeext ; $as_echo "\"$ERL\" -run conftest start -run init stop -noshell" >> conftest$ac_exeext ; chmod +x conftest$ac_exeext'
+     if test "$cross_compiling" = yes; then :
+  { { $as_echo "$as_me:${as_lineno-$LINENO}: error: in \`$ac_pwd':" >&5
+$as_echo "$as_me: error: in \`$ac_pwd':" >&2;}
+as_fn_error "cannot run test program while cross compiling
+See \`config.log' for more details." "$LINENO" 5; }
+else
+  cat > conftest.$ac_ext <<_ACEOF
+-module(conftest).
+-export([start/0]).
+
+start() ->
+	    Version = erlang:system_info(version),
+	    file:write_file("conftest.out", Version),
+	    ReturnValue = 0,
+	    halt(ReturnValue)
+.
+
+_ACEOF
+if ac_fn_erl_try_run "$LINENO"; then :
+  ac_cv_erlang_erts_ver=`cat conftest.out`
+	 rm -f conftest.out
+else
+  rm -f conftest.out
+	 { { $as_echo "$as_me:${as_lineno-$LINENO}: error: in \`$ac_pwd':" >&5
+$as_echo "$as_me: error: in \`$ac_pwd':" >&2;}
+as_fn_error "test Erlang program execution failed
+See \`config.log' for more details." "$LINENO" 5; }
+fi
+rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
+  conftest.$ac_objext conftest.beam conftest.$ac_ext
+fi
+
+     ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_erlang_erts_ver" >&5
+$as_echo "$ac_cv_erlang_erts_ver" >&6; }
+ERLANG_ERTS_VER=$ac_cv_erlang_erts_ver
 
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for Erlang/OTP 'kernel' library subdirectory" >&5
