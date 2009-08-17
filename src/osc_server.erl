@@ -11,7 +11,7 @@
 -vsn("1.0.0").
 
 %% API
--export([start_link/0, state/0]).
+-export([start_link/0]).
 
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
@@ -21,7 +21,7 @@
 
 -define(SERVER, ?MODULE). 
 
--record(state, {}).
+-record(state, {socket}).
 
 %%%===================================================================
 %%% API
@@ -34,14 +34,6 @@
 %%--------------------------------------------------------------------
 start_link() ->
     gen_server:start_link({local, ?SERVER}, ?MODULE, [], []).
-
-%%--------------------------------------------------------------------
-%% @doc Returns server state.
-%% @spec state() -> {ok, State}
-%% @end
-%%--------------------------------------------------------------------
-state() ->
-    gen_server:call(?SERVER, state).
 
 %%%===================================================================
 %%% gen_server callbacks
@@ -57,7 +49,16 @@ state() ->
 %% @end
 %%--------------------------------------------------------------------
 init([]) ->
-    {ok, #state{}}.
+    {ok, Port} = application:get_env(port),
+    {ok, RecBuf} = application:get_env(recbuf),
+    Options = [binary, {active, once}, {recbuf, RecBuf}],
+    case gen_udp:open(Port, Options) of
+	{ok, Socket} ->
+	    {ok, #state{socket = Socket}};
+	{error, Reason} ->
+	    error_logger:error_report({?MODULE,udp_open,Reason}),
+	    {stop, Reason}
+    end.
 
 %%--------------------------------------------------------------------
 %% @private
@@ -71,9 +72,6 @@ init([]) ->
 %%                                   {stop, Reason, State}
 %% @end
 %%--------------------------------------------------------------------
-handle_call(state, _From, State) ->
-    Reply = State,
-    {reply, Reply, State};
 handle_call(_Request, _From, State) ->
     Reply = ok,
     {reply, Reply, State}.
@@ -97,6 +95,16 @@ handle_cast(_Msg, State) ->
 %%                                   {stop, Reason, State}
 %% @end
 %%--------------------------------------------------------------------
+handle_info({udp, Socket, _IP, _Port, Packet}, State) ->
+    inet:setopts(Socket, [{active, once}]),
+    try osc_lib:decode(Packet) of
+	OSC ->
+	    error_logger:info_report({?MODULE,OSC})
+    catch
+	Class:Term ->
+	    error_logger:error_report({?MODULE,Class,Term})
+    end,
+    {noreply, State};
 handle_info(_Info, State) ->
     {noreply, State}.
 
@@ -111,7 +119,8 @@ handle_info(_Info, State) ->
 %% @spec terminate(Reason, State) -> void()
 %% @end
 %%--------------------------------------------------------------------
-terminate(_Reason, _State) ->
+terminate(_Reason, State) ->
+    gen_udp:close(State#state.socket),
     ok.
 
 %%--------------------------------------------------------------------

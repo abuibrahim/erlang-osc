@@ -6,6 +6,6 @@
   {registered, [osc_sup, osc_server]},
   {applications, [kernel, stdlib]},
   {mod, {osc_app, []}},
-  {env, []}
+  {env, [{port, 7123}, {recbuf, 8192}]}
  ]}.
 %% vim: set filetype=erlang :
