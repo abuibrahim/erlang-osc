@@ -170,7 +170,7 @@ when_to_msec({Seconds, Fractions}) ->
     {MegaSecs, Secs, MicroSecs} = now(),
     S = (Seconds - 2208988800) - (MegaSecs * 1000000 + Secs),
     F = Fractions - (MicroSecs * 1000000),
-    case (S * 1000) + (1000 / F) of
+    case (S * 1000) + (1000 div F) of
 	Time when Time > 0 ->
 	    Time;
 	_ ->
