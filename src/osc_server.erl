@@ -117,7 +117,7 @@ handle_info({udp, Socket, _IP, _Port, Packet}, State) ->
     Methods = State#state.methods,
     try osc_lib:decode(Packet) of
 	{message, Address, Args} ->
-	    handle_message(Address, Args, immediately, Methods);
+	    handle_message(immediately, Address, Args, Methods);
 	{bundle, When, Elements} ->
 	    handle_bundle(When, Elements, Methods)
     catch
@@ -155,13 +155,13 @@ code_change(_OldVsn, State, _Extra) ->
 %%%===================================================================
 %%% Internal functions
 %%%===================================================================
-handle_message(Address, Args, When, Methods) ->
+handle_message(When, Address, Args, Methods) ->
     case lists:keysearch(Address, 1, Methods) of
 	{value, {Address, Module, Function}} ->
 	    Time = when_to_msec(When),
 	    timer:apply_after(Time, Module, Function, Args);
 	false ->
-	    error_logger:info_report({?MODULE,unhandled,{message,Address,Args}})
+	    error_logger:info_report({unhandled,{message,Address,Args}})
     end.
 
 when_to_msec(immediately) ->
@@ -180,7 +180,7 @@ when_to_msec({Seconds, Fractions}) ->
 handle_bundle(_When, [], _Methods) ->
     ok;
 handle_bundle(When, [{message, Address, Args} | Rest], Methods) ->
-    handle_message(Address, Args, When, Methods),
+    handle_message(When, Address, Args, Methods),
     handle_bundle(When, Rest, Methods);
 handle_bundle(When, [{bundle, InnerWhen, Elements} | Rest], Methods) ->
     handle_bundle(InnerWhen, Elements, Methods),
