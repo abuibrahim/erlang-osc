@@ -33,7 +33,7 @@ NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
 subdir = src
-DIST_COMMON = $(dist_erl_DATA) $(dist_hrl_DATA) $(dist_noinst_DATA) \
+DIST_COMMON = $(dist_erl_DATA) $(dist_noinst_DATA) \
 	$(srcdir)/Makefile.am $(srcdir)/Makefile.in \
 	$(srcdir)/osc.app.in $(srcdir)/overview.edoc.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -67,9 +67,8 @@ am__base_list = \
   sed '$$!N;$$!N;$$!N;$$!N;$$!N;$$!N;$$!N;s/\n/ /g' | \
   sed '$$!N;$$!N;$$!N;$$!N;s/\n/ /g'
 am__installdirs = "$(DESTDIR)$(beamdir)" "$(DESTDIR)$(erldir)" \
-	"$(DESTDIR)$(hrldir)" "$(DESTDIR)$(htmldir)"
-DATA = $(beam_DATA) $(dist_erl_DATA) $(dist_hrl_DATA) \
-	$(dist_noinst_DATA) $(html_DATA)
+	"$(DESTDIR)$(htmldir)"
+DATA = $(beam_DATA) $(dist_erl_DATA) $(dist_noinst_DATA) $(html_DATA)
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 ACLOCAL = @ACLOCAL@
 AMTAR = @AMTAR@
@@ -156,8 +155,6 @@ top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 dist_erl_DATA = osc_app.erl osc_sup.erl osc_lib.erl osc_server.erl
 erldir = $(ERLANG_INSTALL_LIB_DIR_osc)/src
-dist_hrl_DATA = osc.hrl
-hrldir = $(ERLANG_INSTALL_LIB_DIR_osc)/include
 beam_DATA = $(dist_erl_DATA:.erl=.beam) osc.app
 beamdir = $(ERLANG_INSTALL_LIB_DIR_osc)/ebin
 html_DATA = $(dist_erl_DATA:.erl=.html) erlang.png edoc-info stylesheet.css \
@@ -243,26 +240,6 @@ uninstall-dist_erlDATA:
 	test -n "$$files" || exit 0; \
 	echo " ( cd '$(DESTDIR)$(erldir)' && rm -f" $$files ")"; \
 	cd "$(DESTDIR)$(erldir)" && rm -f $$files
-install-dist_hrlDATA: $(dist_hrl_DATA)
-	@$(NORMAL_INSTALL)
-	test -z "$(hrldir)" || $(MKDIR_P) "$(DESTDIR)$(hrldir)"
-	@list='$(dist_hrl_DATA)'; test -n "$(hrldir)" || list=; \
-	for p in $$list; do \
-	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
-	  echo "$$d$$p"; \
-	done | $(am__base_list) | \
-	while read files; do \
-	  echo " $(INSTALL_DATA) $$files '$(DESTDIR)$(hrldir)'"; \
-	  $(INSTALL_DATA) $$files "$(DESTDIR)$(hrldir)" || exit $$?; \
-	done
-
-uninstall-dist_hrlDATA:
-	@$(NORMAL_UNINSTALL)
-	@list='$(dist_hrl_DATA)'; test -n "$(hrldir)" || list=; \
-	files=`for p in $$list; do echo $$p; done | sed -e 's|^.*/||'`; \
-	test -n "$$files" || exit 0; \
-	echo " ( cd '$(DESTDIR)$(hrldir)' && rm -f" $$files ")"; \
-	cd "$(DESTDIR)$(hrldir)" && rm -f $$files
 install-htmlDATA: $(html_DATA)
 	@$(NORMAL_INSTALL)
 	test -z "$(htmldir)" || $(MKDIR_P) "$(DESTDIR)$(htmldir)"
@@ -324,7 +301,7 @@ check-am: all-am
 check: check-am
 all-am: Makefile $(DATA)
 installdirs:
-	for dir in "$(DESTDIR)$(beamdir)" "$(DESTDIR)$(erldir)" "$(DESTDIR)$(hrldir)" "$(DESTDIR)$(htmldir)"; do \
+	for dir in "$(DESTDIR)$(beamdir)" "$(DESTDIR)$(erldir)" "$(DESTDIR)$(htmldir)"; do \
 	  test -z "$$dir" || $(MKDIR_P) "$$dir"; \
 	done
 install: install-am
@@ -374,7 +351,7 @@ info: info-am
 info-am:
 
 install-data-am: install-beamDATA install-dist_erlDATA \
-	install-dist_hrlDATA install-htmlDATA
+	install-htmlDATA
 
 install-dvi: install-dvi-am
 
@@ -419,22 +396,21 @@ ps: ps-am
 ps-am:
 
 uninstall-am: uninstall-beamDATA uninstall-dist_erlDATA \
-	uninstall-dist_hrlDATA uninstall-htmlDATA
+	uninstall-htmlDATA
 
 .MAKE: install-am install-strip
 
 .PHONY: all all-am check check-am clean clean-generic distclean \
 	distclean-generic distdir dvi dvi-am html html-am info info-am \
 	install install-am install-beamDATA install-data \
-	install-data-am install-dist_erlDATA install-dist_hrlDATA \
-	install-dvi install-dvi-am install-exec install-exec-am \
-	install-html install-html-am install-htmlDATA install-info \
-	install-info-am install-man install-pdf install-pdf-am \
-	install-ps install-ps-am install-strip installcheck \
-	installcheck-am installdirs maintainer-clean \
-	maintainer-clean-generic mostlyclean mostlyclean-generic pdf \
-	pdf-am ps ps-am uninstall uninstall-am uninstall-beamDATA \
-	uninstall-dist_erlDATA uninstall-dist_hrlDATA \
+	install-data-am install-dist_erlDATA install-dvi \
+	install-dvi-am install-exec install-exec-am install-html \
+	install-html-am install-htmlDATA install-info install-info-am \
+	install-man install-pdf install-pdf-am install-ps \
+	install-ps-am install-strip installcheck installcheck-am \
+	installdirs maintainer-clean maintainer-clean-generic \
+	mostlyclean mostlyclean-generic pdf pdf-am ps ps-am uninstall \
+	uninstall-am uninstall-beamDATA uninstall-dist_erlDATA \
 	uninstall-htmlDATA
 
 
