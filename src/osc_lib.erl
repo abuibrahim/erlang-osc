@@ -11,22 +11,12 @@
 -export([decode/1]).
 
 -include_lib("eunit/include/eunit.hrl").
--include("osc.hrl").
-
 
 %% @doc Returns a message or a bundle.
 %% @spec decode(binary()) -> #osc_message{} | #osc_bundle{}
-decode(Bin) when is_binary(Bin) ->
-    decode(Bin, []).
-
-decode(<<>>, Acc) ->
-    lists:reverse(Acc);
-decode(<<Size:32, Bin:Size/binary, Rest/binary>>, Acc) ->
-    decode(Rest, [decode_packet(Bin)|Acc]).
-    
-decode_packet(<<"#bundle", 0, Time:8/binary, Rest/binary>>) ->
-    #osc_bundle{time = decode_time(Time), elements = decode(Rest)};
-decode_packet(<<"/", _/binary>> = Bin) ->
+decode(<<"#bundle", 0, Time:8/binary, Rest/binary>>) ->
+    {bundle, decode_time(Time), decode_bundle(Rest, [])};
+decode(<<"/", _/binary>> = Bin) ->
     {Address, Rest1} = decode_string(Bin),
     {Arguments, _} =
 	try decode_string(Rest1) of
@@ -38,7 +28,12 @@ decode_packet(<<"/", _/binary>> = Bin) ->
 	    _:_ ->
 		{Rest1, <<>>}
 	end,
-    #osc_message{address = Address, arguments = Arguments}.
+    {message, Address, Arguments}.
+
+decode_bundle(<<>>, Acc) ->
+    lists:reverse(Acc);
+decode_bundle(<<Size:32, Bin:Size/binary, Rest/binary>>, Acc) ->
+    decode_bundle(Rest, [decode(Bin)|Acc]).
 
 decode_time(<<1:64>>) ->
     immediately;
