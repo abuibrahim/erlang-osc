@@ -13,5 +13,6 @@ AC_ERLANG_CHECK_LIB([kernel])
 AC_ERLANG_CHECK_LIB([stdlib])
 AC_ERLANG_SUBST_INSTALL_LIB_SUBDIR([osc], [1.0.0])
 
-AC_CONFIG_FILES([Makefile src/osc.app src/overview.edoc src/Makefile])
+AC_CONFIG_FILES([Makefile src/osc.app src/osc.rel src/overview.edoc
+	src/Makefile])
 AC_OUTPUT

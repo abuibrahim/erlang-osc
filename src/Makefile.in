@@ -35,13 +35,14 @@ POST_UNINSTALL = :
 subdir = src
 DIST_COMMON = $(dist_erl_DATA) $(dist_noinst_DATA) \
 	$(srcdir)/Makefile.am $(srcdir)/Makefile.in \
-	$(srcdir)/osc.app.in $(srcdir)/overview.edoc.in
+	$(srcdir)/osc.app.in $(srcdir)/osc.rel.in \
+	$(srcdir)/overview.edoc.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
 mkinstalldirs = $(install_sh) -d
-CONFIG_CLEAN_FILES = osc.app overview.edoc
+CONFIG_CLEAN_FILES = osc.app osc.rel overview.edoc
 CONFIG_CLEAN_VPATH_FILES =
 SOURCES =
 DIST_SOURCES =
@@ -202,6 +203,8 @@ $(ACLOCAL_M4):  $(am__aclocal_m4_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
 $(am__aclocal_m4_deps):
 osc.app: $(top_builddir)/config.status $(srcdir)/osc.app.in
+	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
+osc.rel: $(top_builddir)/config.status $(srcdir)/osc.rel.in
 	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
 overview.edoc: $(top_builddir)/config.status $(srcdir)/overview.edoc.in
 	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@

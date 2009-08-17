@@ -2897,7 +2897,7 @@ $as_echo "$ERLANG_INSTALL_LIB_DIR/osc-1.0.0" >&6; }
 fi
 
 
-ac_config_files="$ac_config_files Makefile src/osc.app src/overview.edoc src/Makefile"
+ac_config_files="$ac_config_files Makefile src/osc.app src/osc.rel src/overview.edoc src/Makefile"
 
 cat >confcache <<\_ACEOF
 # This file is a shell script that caches the results of configure
@@ -3599,6 +3599,7 @@ do
   case $ac_config_target in
     "Makefile") CONFIG_FILES="$CONFIG_FILES Makefile" ;;
     "src/osc.app") CONFIG_FILES="$CONFIG_FILES src/osc.app" ;;
+    "src/osc.rel") CONFIG_FILES="$CONFIG_FILES src/osc.rel" ;;
     "src/overview.edoc") CONFIG_FILES="$CONFIG_FILES src/overview.edoc" ;;
     "src/Makefile") CONFIG_FILES="$CONFIG_FILES src/Makefile" ;;
 
