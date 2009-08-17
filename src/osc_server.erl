@@ -177,6 +177,8 @@ when_to_msec({Seconds, Fractions}) ->
 	    0
     end.
 
+handle_bundle(_When, [], _Methods) ->
+    ok;
 handle_bundle(When, [{message, Address, Args} | Rest], Methods) ->
     handle_message(Address, Args, When, Methods),
     handle_bundle(When, Rest, Methods);
