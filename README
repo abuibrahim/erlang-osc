@@ -1,0 +1,4 @@
+This is an implementation of the Open Sound Control (OSC) protocol written
+in Erlang.
+
+For more information about OSC, see http://www.opensoundcontrol.org/
