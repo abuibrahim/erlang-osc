@@ -2,7 +2,7 @@
 @copyright 2009 Ruslan Babayev
 @version @VERSION@
 @title Erlang Open Sound Control Application 
-@doc This is an Erlang application that implements OSC 1.0 specification.
+@doc This is an Erlang application that implements OSC 1.1 specification.
 Open Sound Control (OSC) is an open, transport-independent, message-based
 protocol developed for communication among computers, sound synthesizers,
 and other multimedia devices.

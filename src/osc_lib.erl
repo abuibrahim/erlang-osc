@@ -13,7 +13,10 @@
 -include_lib("eunit/include/eunit.hrl").
 
 %% @doc Returns a message or a bundle.
-%% @spec decode(binary()) -> #osc_message{} | #osc_bundle{}
+%% @spec decode(binary()) -> message() | bundle()
+%% @type message() = {message, Address::string(), Arguments::[any()]}
+%% @type bundle() = {bundle, When::time(), [message() | bundle()]}
+%% @type time() = immediately | {Seconds::integer(), Fractions::integer()}
 decode(<<"#bundle", 0, Time:8/binary, Rest/binary>>) ->
     {bundle, decode_time(Time), decode_bundle(Rest, [])};
 decode(<<"/", _/binary>> = Bin) ->
