@@ -19,7 +19,7 @@
 
 -define(SERVER, ?MODULE). 
 
--record(state, {socket, methods = []}).
+-record(state, {socket, methods}).
 
 %%%===================================================================
 %%% API
@@ -68,7 +68,8 @@ init([]) ->
     Options = [binary, {active, once}, {recbuf, RecBuf}],
     case gen_udp:open(Port, Options) of
 	{ok, Socket} ->
-	    {ok, #state{socket = Socket}};
+	    Methods = ets:new(osc_methods, [named_table, ordered_set]),
+	    {ok, #state{socket = Socket, methods = Methods}};
 	{error, Reason} ->
 	    error_logger:error_report({?MODULE,udp_open,Reason}),
 	    {stop, Reason}
@@ -100,9 +101,12 @@ handle_call(_Request, _From, State) ->
 %%--------------------------------------------------------------------
 handle_cast({add_method, Address, Module, Function}, State) ->
     Methods = State#state.methods,
-    {noreply, State#state{methods = [{Address, Module, Function} | Methods]}};
-handle_cast({delete_method, Address}, #state{methods = Methods} = State) ->
-    {noreply, State#state{methods = lists:keydelete(Address, 1, Methods)}}.
+    ets:insert(Methods, {string:tokens(Address, "/"), {Module, Function}}),
+    {noreply, State};
+handle_cast({delete_method, Address}, State) ->
+    Methods = State#state.methods,
+    ets:delete(Methods, string:tokens(Address, "/")),
+    {noreply, State}.
 
 %%--------------------------------------------------------------------
 %% @private
@@ -156,13 +160,32 @@ code_change(_OldVsn, State, _Extra) ->
 %%% Internal functions
 %%%===================================================================
 handle_message(When, Address, Args, Methods) ->
-    case lists:keysearch(Address, 1, Methods) of
-	{value, {Address, Module, Function}} ->
-	    Time = when_to_msec(When),
-	    timer:apply_after(Time, Module, Function, Args);
-	false ->
-	    error_logger:info_report({unhandled,{message,Address,Args}})
+    case ets:match(Methods, make_pattern(Address)) of
+	[] ->
+	    error_logger:info_report({unhandled,{message,Address,Args}});
+	Matches ->
+	    [timer:apply_after(when_to_msec(When), Module, Function, Args) ||
+		[{Module, Function}] <- Matches]
     end.
+
+make_pattern(Address) ->
+    make_pattern(string:tokens(Address, "/"), []).
+
+make_pattern([], Acc) ->
+    {lists:reverse(Acc), '$1'};
+make_pattern(["*"], Acc) ->
+    {lists:reverse(Acc) ++ '_', '$1'};
+make_pattern([H|T], Acc) ->
+    make_pattern(T, [make_pattern2(H, [])|Acc]).
+
+make_pattern2([], Acc) ->
+    lists:reverse(Acc);
+make_pattern2([$*|_], Acc) ->
+    lists:reverse(Acc) ++ '_';
+make_pattern2([$?|T], Acc) ->
+    make_pattern2(T, ['_'|Acc]);
+make_pattern2([H|T], Acc) ->
+    make_pattern2(T, [H|Acc]).
 
 when_to_msec(immediately) ->
     0;
