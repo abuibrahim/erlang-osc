@@ -19,7 +19,7 @@ $(boot_DATA): $(beam_DATA)
 	@$(ERLC) $(ERLCFLAGS) $<
 
 .rel.boot:
-	@echo "Generating boot script..."
+	@echo "Generating boot scripts..."
 	@$(ERLC) -I. +no_module_tests $<
 
 .rel.script:
