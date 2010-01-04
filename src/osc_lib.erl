@@ -26,7 +26,7 @@ decode(<<"/", _/binary>> = Bin) ->
     {Arguments, _} =
 	try decode_string(Rest1) of
 	    {[$,|Types], Rest2} ->
-		decode_arguments(Rest2, Types);
+		decode_args(Rest2, Types);
 	    _ ->
 		{Rest1, <<>>}
 	catch
@@ -104,49 +104,55 @@ decode_blobs_test_() ->
      ?_assertEqual({<<1,2>>, <<>>}, decode_blob(<<0,0,0,2,1,2,0,0>>)),
      ?_assertEqual({<<1,2,3>>, <<>>}, decode_blob(<<0,0,0,3,1,2,3,0>>)),
      ?_assertEqual({<<1,2,3,4>>, <<>>}, decode_blob(<<0,0,0,4,1,2,3,4>>))].
-	
-decode_arguments(Bin, Types) ->
-    decode_arguments(Bin, Types, []).
 
-decode_arguments(Rest, [], Acc) ->
+%% @private
+%% @doc Decodes arguments.
+%% @spec decode_args(Bytes::binary(), Types::string()) -> args()
+decode_args(Bin, Types) ->
+    decode_args(Bin, Types, []).
+
+%% @private
+%% @doc Decodes arguments.
+%% @spec decode_args(Bytes::binary(), Types::string(), Acc::args()) -> args()
+decode_args(Rest, [], Acc) ->
     {lists:reverse(Acc), Rest};
-decode_arguments(<<Int32:32, Rest/binary>>, [$i|T], Acc) ->
-    decode_arguments(Rest, T, [Int32|Acc]);
-decode_arguments(<<Float:32/float, Rest/binary>>, [$f|T], Acc) ->
-    decode_arguments(Rest, T, [Float|Acc]);
-decode_arguments(Bin, [$s|T], Acc) ->
+decode_args(<<Int32:32, Rest/binary>>, [$i|T], Acc) ->
+    decode_args(Rest, T, [Int32|Acc]);
+decode_args(<<Float:32/float, Rest/binary>>, [$f|T], Acc) ->
+    decode_args(Rest, T, [Float|Acc]);
+decode_args(Bin, [$s|T], Acc) ->
     {String, Rest} = decode_string(Bin),
-    decode_arguments(Rest, T, [String|Acc]);
-decode_arguments(Bin, [$b|T], Acc) ->
+    decode_args(Rest, T, [String|Acc]);
+decode_args(Bin, [$b|T], Acc) ->
     {Blob, Rest} = decode_blob(Bin),
-    decode_arguments(Rest, T, [Blob|Acc]);
-decode_arguments(<<Int64:64, Rest/binary>>, [$h|T], Acc) ->
-    decode_arguments(Rest, T, [Int64|Acc]);
-decode_arguments(<<Time:8/binary, Rest/binary>>, [$t|T], Acc) ->
-    decode_arguments(Rest, T, [decode_time(Time)|Acc]);
-decode_arguments(<<Double:64/float, Rest/binary>>, [$d|T], Acc) ->
-    decode_arguments(Rest, T, [Double|Acc]);
-decode_arguments(Bin, [$S|T], Acc) ->
+    decode_args(Rest, T, [Blob|Acc]);
+decode_args(<<Int64:64, Rest/binary>>, [$h|T], Acc) ->
+    decode_args(Rest, T, [Int64|Acc]);
+decode_args(<<Time:8/binary, Rest/binary>>, [$t|T], Acc) ->
+    decode_args(Rest, T, [decode_time(Time)|Acc]);
+decode_args(<<Double:64/float, Rest/binary>>, [$d|T], Acc) ->
+    decode_args(Rest, T, [Double|Acc]);
+decode_args(Bin, [$S|T], Acc) ->
     {Symbol, Rest} = decode_string(Bin),
-    decode_arguments(Rest, T, [list_to_atom(Symbol)|Acc]);
-decode_arguments(<<Char:32, Rest/binary>>, [$c|T], Acc) ->
-    decode_arguments(Rest, T, [Char|Acc]);
-decode_arguments(<<R, G, B, A, Rest/binary>>, [$r|T], Acc) ->
-    decode_arguments(Rest, T, [{R,G,B,A}|Acc]);
-decode_arguments(<<Port, Status, Data1, Data2, Rest/binary>>, [$m|T], Acc) ->
-    decode_arguments(Rest, T, [{Port,Status,Data1,Data2}|Acc]);
-decode_arguments(Bin, [$T|T], Acc) ->
-    decode_arguments(Bin, T, [true|Acc]);
-decode_arguments(Bin, [$F|T], Acc) ->
-    decode_arguments(Bin, T, [false|Acc]);
-decode_arguments(Bin, [$N|T], Acc) ->
-    decode_arguments(Bin, T, [null|Acc]);
-decode_arguments(Bin, [$I|T], Acc) ->
-    decode_arguments(Bin, T, [impulse|Acc]);
-decode_arguments(Bin, [$[|T], Acc) ->
-    {Array, RestBin, RestTypes} = decode_arguments(Bin, T, []),
-    decode_arguments(RestBin, RestTypes, [Array|Acc]);
-decode_arguments(Bin, [$]|T], Acc) ->
+    decode_args(Rest, T, [list_to_atom(Symbol)|Acc]);
+decode_args(<<Char:32, Rest/binary>>, [$c|T], Acc) ->
+    decode_args(Rest, T, [Char|Acc]);
+decode_args(<<R, G, B, A, Rest/binary>>, [$r|T], Acc) ->
+    decode_args(Rest, T, [{R,G,B,A}|Acc]);
+decode_args(<<Port, Status, Data1, Data2, Rest/binary>>, [$m|T], Acc) ->
+    decode_args(Rest, T, [{Port,Status,Data1,Data2}|Acc]);
+decode_args(Bin, [$T|T], Acc) ->
+    decode_args(Bin, T, [true|Acc]);
+decode_args(Bin, [$F|T], Acc) ->
+    decode_args(Bin, T, [false|Acc]);
+decode_args(Bin, [$N|T], Acc) ->
+    decode_args(Bin, T, [null|Acc]);
+decode_args(Bin, [$I|T], Acc) ->
+    decode_args(Bin, T, [impulse|Acc]);
+decode_args(Bin, [$[|T], Acc) ->
+    {Array, RestBin, RestTypes} = decode_args(Bin, T, []),
+    decode_args(RestBin, RestTypes, [Array|Acc]);
+decode_args(Bin, [$]|T], Acc) ->
     {lists:reverse(Acc), Bin, T}.
 
 decode_arguments_test() ->
