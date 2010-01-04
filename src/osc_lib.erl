@@ -168,6 +168,7 @@ decode_args_test() ->
 encode_string(String) when is_list(String) ->
     pad(list_to_binary(String ++ [0]), 4).
 
+%% @hidden
 encode_strings_test_() ->
     [?_assertEqual(<<"hello",0,0,0>>, encode_string("hello")),
      ?_assertEqual(<<"hello1",0,0>>, encode_string("hello1")),
