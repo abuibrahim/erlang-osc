@@ -78,7 +78,7 @@ decode_strings_test_() ->
 %% @doc Zero-pads the binary.
 %% @spec pad(Bytes::binary(), Pad::integer()) -> binary()
 pad(B, P) when is_binary(B), is_integer(P) ->
-    L = pad_len(size(B), 4),
+    L = pad_len(size(B), P),
     <<B/binary, 0:L/integer-unit:8>>.
 
 %% @private
