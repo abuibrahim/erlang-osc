@@ -28,10 +28,10 @@ decode(<<"/", _/binary>> = Bin) ->
 	    {[$,|Types], Rest2} ->
 		decode_args(Rest2, Types);
 	    _ ->
-		{Rest1, <<>>}
+		{[Rest1], <<>>}
 	catch
 	    _:_ ->
-		{Rest1, <<>>}
+		{[Rest1], <<>>}
 	end,
     {message, Address, Arguments}.
 
