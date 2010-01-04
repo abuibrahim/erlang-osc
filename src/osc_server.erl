@@ -1,14 +1,12 @@
-%%%-------------------------------------------------------------------
-%%% @author Ruslan Babayev <ruslan@babayev.com>
-%%% @copyright 2009, Ruslan Babayev
-%%% @doc Open Sound Control Server.
-%%% @end
-%%% Created : 15 Aug 2009 by Ruslan Babayev <ruslan@babayev.com>
-%%%-------------------------------------------------------------------
+%% @author Ruslan Babayev <ruslan@babayev.com>
+%% @copyright 2009 Ruslan Babayev
+%% @doc OSC Server.
+
 -module(osc_server).
 -author("ruslan@babayev.com").
--behaviour(gen_server).
 -vsn("1.0.0").
+
+-behaviour(gen_server).
 
 %% API
 -export([start_link/0, add_method/3, delete_method/1]).
@@ -21,47 +19,27 @@
 
 -record(state, {socket, methods}).
 
-%%%===================================================================
-%%% API
-%%%===================================================================
-
-%%--------------------------------------------------------------------
 %% @doc Starts the server.
 %% @spec start_link() -> {ok, Pid} | ignore | {error, Error}
-%% @end
-%%--------------------------------------------------------------------
 start_link() ->
     gen_server:start_link({local, ?SERVER}, ?MODULE, [], []).
 
-%%--------------------------------------------------------------------
 %% @doc Adds a method.
 %% @spec add_method(string(), atom(), atom()) -> none()
-%% @end
-%%--------------------------------------------------------------------
 add_method(Address, Module, Function) ->
     gen_server:cast(?SERVER, {add_method, Address, Module, Function}).
 
-%%--------------------------------------------------------------------
-%% @doc Delete a method.
+%% @doc Deletes a method.
 %% @spec delete_method(Address) -> none()
-%% @end
-%%--------------------------------------------------------------------
 delete_method(Address) ->
     gen_server:cast(?SERVER, {delete_method, Address}).
 
-%%%===================================================================
-%%% gen_server callbacks
-%%%===================================================================
-
-%%--------------------------------------------------------------------
 %% @private
-%% @doc Initiates the server.
+%% @doc Initializes the server.
 %% @spec init(Args) -> {ok, State} |
 %%                     {ok, State, Timeout} |
 %%                     ignore |
 %%                     {stop, Reason}
-%% @end
-%%--------------------------------------------------------------------
 init([]) ->
     {ok, Port} = application:get_env(port),
     {ok, RecBuf} = application:get_env(recbuf),
@@ -75,30 +53,24 @@ init([]) ->
 	    {stop, Reason}
     end.
 
-%%--------------------------------------------------------------------
 %% @private
 %% @doc Handles call messages.
 %% @spec handle_call(Request, From, State) ->
-%%                                   {reply, Reply, State} |
-%%                                   {reply, Reply, State, Timeout} |
-%%                                   {noreply, State} |
-%%                                   {noreply, State, Timeout} |
-%%                                   {stop, Reason, Reply, State} |
-%%                                   {stop, Reason, State}
-%% @end
-%%--------------------------------------------------------------------
+%%                  {reply, Reply, State} |
+%%                  {reply, Reply, State, Timeout} |
+%%                  {noreply, State} |
+%%                  {noreply, State, Timeout} |
+%%                  {stop, Reason, Reply, State} |
+%%                  {stop, Reason, State}
 handle_call(_Request, _From, State) ->
     Reply = ok,
     {reply, Reply, State}.
 
-%%--------------------------------------------------------------------
 %% @private
 %% @doc Handles cast messages.
 %% @spec handle_cast(Msg, State) -> {noreply, State} |
 %%                                  {noreply, State, Timeout} |
 %%                                  {stop, Reason, State}
-%% @end
-%%--------------------------------------------------------------------
 handle_cast({add_method, Address, Module, Function}, State) ->
     Methods = State#state.methods,
     ets:insert(Methods, {string:tokens(Address, "/"), {Module, Function}}),
@@ -108,14 +80,11 @@ handle_cast({delete_method, Address}, State) ->
     ets:delete(Methods, string:tokens(Address, "/")),
     {noreply, State}.
 
-%%--------------------------------------------------------------------
 %% @private
 %% @doc Handles all non call/cast messages.
 %% @spec handle_info(Info, State) -> {noreply, State} |
 %%                                   {noreply, State, Timeout} |
 %%                                   {stop, Reason, State}
-%% @end
-%%--------------------------------------------------------------------
 handle_info({udp, Socket, _IP, _Port, Packet}, State) ->
     inet:setopts(Socket, [{active, once}]),
     Methods = State#state.methods,
@@ -132,33 +101,26 @@ handle_info({udp, Socket, _IP, _Port, Packet}, State) ->
 handle_info(_Info, State) ->
     {noreply, State}.
 
-%%--------------------------------------------------------------------
 %% @private
-%% @doc
-%% This function is called by a gen_server when it is about to
-%% terminate. It should be the opposite of Module:init/1 and do any
-%% necessary cleaning up. When it returns, the gen_server terminates
-%% with Reason. The return value is ignored.
-%%
+%% @doc Terminates the server.
 %% @spec terminate(Reason, State) -> void()
-%% @end
-%%--------------------------------------------------------------------
 terminate(_Reason, State) ->
     gen_udp:close(State#state.socket),
     ok.
 
-%%--------------------------------------------------------------------
 %% @private
 %% @doc Converts process state when code is changed.
 %% @spec code_change(OldVsn, State, Extra) -> {ok, NewState}
-%% @end
-%%--------------------------------------------------------------------
 code_change(_OldVsn, State, _Extra) ->
     {ok, State}.
 
-%%%===================================================================
-%%% Internal functions
-%%%===================================================================
+%% @private
+%% @doc Handles OSC messages.
+%% @spec handle_message(When, Address, Args, Methods) -> any()
+%%       When = time()
+%%       Address = string()
+%%       Args = [any()]
+%%       Methods = [method()]
 handle_message(When, Address, Args, Methods) ->
     case ets:match(Methods, make_pattern(Address)) of
 	[] ->
@@ -168,6 +130,9 @@ handle_message(When, Address, Args, Methods) ->
 		[{Module, Function}] <- Matches]
     end.
 
+%% @private
+%% @doc Converts the OSC address pattern into ETS match spec.
+%% @spec make_pattern(string()) -> tuple()
 make_pattern(Address) ->
     make_pattern(string:tokens(Address, "/"), []).
 
@@ -200,6 +165,15 @@ when_to_msec({Seconds, Fractions}) ->
 	    0
     end.
 
+%% @private
+%% @doc Handles OSC bundles.
+%% @spec handle_bundle(When, Elements, Methods) -> any()
+%%       Elements = [message() | bundle()]
+%%       Methods = [method()]
+%% @type message() = {message, Address::string(), Arguments::[any()]}
+%% @type bundle() = {bundle, When::time(), [message() | bundle()]}
+%% @type time() = immediately | {Seconds::integer(), Fractions::integer()}
+%% @type method() = {Module::atom(), Function::atom()}
 handle_bundle(_When, [], _Methods) ->
     ok;
 handle_bundle(When, [{message, Address, Args} | Rest], Methods) ->

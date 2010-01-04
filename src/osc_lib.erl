@@ -1,10 +1,7 @@
-%%%-------------------------------------------------------------------
-%%% @author Ruslan Babayev <ruslan@babayev.com>
-%%% @copyright 2009, Ruslan Babayev
-%%% @doc Open Sound Control Library.
-%%% @end
-%%% Created : 15 Aug 2009 by Ruslan Babayev <ruslan@babayev.com>
-%%%-------------------------------------------------------------------
+%% @author Ruslan Babayev <ruslan@babayev.com>
+%% @copyright 2009 Ruslan Babayev
+%% @doc OSC Library.
+
 -module(osc_lib).
 -author("ruslan@babayev.com").
 
@@ -12,7 +9,7 @@
 
 -include_lib("eunit/include/eunit.hrl").
 
-%% @doc Returns a message or a bundle.
+%% @doc Decodes messages.
 %% @spec decode(binary()) -> message() | bundle()
 %% @type message() = {message, Address::string(), Arguments::[any()]}
 %% @type bundle() = {bundle, When::time(), [message() | bundle()]}
@@ -33,11 +30,15 @@ decode(<<"/", _/binary>> = Bin) ->
 	end,
     {message, Address, Arguments}.
 
+%% @private Decodes bundles.
+%% @spec decode_bundle(binary(), list()) -> [bundle()]
 decode_bundle(<<>>, Acc) ->
     lists:reverse(Acc);
 decode_bundle(<<Size:32, Bin:Size/binary, Rest/binary>>, Acc) ->
     decode_bundle(Rest, [decode(Bin)|Acc]).
 
+%% @private Decodes times.
+%% @spec decode_time(binary()) -> time()
 decode_time(<<1:64>>) ->
     immediately;
 decode_time(<<Seconds:32, Fractions:32>>) ->
