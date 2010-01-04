@@ -6,8 +6,12 @@
 
 -export([start/0, stop/0]).
 
+%% @doc Starts the application.
+%% @spec start() -> ok | {error, Reason}
 start() ->
     application:start(osc).
 
+%% @doc Stops the application.
+%% @spec stop() -> ok
 stop() ->
     application:stop(osc).

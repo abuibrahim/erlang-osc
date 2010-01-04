@@ -25,12 +25,12 @@ start_link() ->
     gen_server:start_link({local, ?SERVER}, ?MODULE, [], []).
 
 %% @doc Adds a method.
-%% @spec add_method(string(), atom(), atom()) -> none()
+%% @spec add_method(string(), atom(), atom()) -> ok
 add_method(Address, Module, Function) ->
     gen_server:cast(?SERVER, {add_method, Address, Module, Function}).
 
 %% @doc Deletes a method.
-%% @spec delete_method(Address) -> none()
+%% @spec delete_method(Address) -> ok
 delete_method(Address) ->
     gen_server:cast(?SERVER, {delete_method, Address}).
 
@@ -170,10 +170,10 @@ when_to_msec({Seconds, Fractions}) ->
 %% @spec handle_bundle(When, Elements, Methods) -> any()
 %%       Elements = [message() | bundle()]
 %%       Methods = [method()]
-%% @type message() = {message, Address::string(), Arguments::[any()]}
-%% @type bundle() = {bundle, When::time(), [message() | bundle()]}
-%% @type time() = immediately | {Seconds::integer(), Fractions::integer()}
-%% @type method() = {Module::atom(), Function::atom()}
+%%       message() = {message, Address::string(), Args::[any()]}
+%%       bundle() = {bundle, When::time(), [message() | bundle()]}
+%%       time() = immediately | {Seconds::integer(), Fractions::integer()}
+%%       method() = {Module::atom(), Function::atom()}
 handle_bundle(_When, [], _Methods) ->
     ok;
 handle_bundle(When, [{message, Address, Args} | Rest], Methods) ->

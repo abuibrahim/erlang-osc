@@ -20,6 +20,6 @@ start(_StartType, _StartArgs) ->
     osc_sup:start_link().
 
 %% @doc Stops the application.
-%% @spec stop(State) -> void()
+%% @spec stop(State) -> ok
 stop(_State) ->
     ok.

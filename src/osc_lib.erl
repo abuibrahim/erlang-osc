@@ -1,6 +1,6 @@
 %% @author Ruslan Babayev <ruslan@babayev.com>
 %% @copyright 2009 Ruslan Babayev
-%% @doc OSC Library.
+%% @doc OSC Decoding Library.
 
 -module(osc_lib).
 -author("ruslan@babayev.com").
@@ -9,11 +9,16 @@
 
 -include_lib("eunit/include/eunit.hrl").
 
-%% @doc Decodes messages.
-%% @spec decode(binary()) -> message() | bundle()
-%% @type message() = {message, Address::string(), Arguments::[any()]}
-%% @type bundle() = {bundle, When::time(), [message() | bundle()]}
+%% @type message() = {message, Address::string(), args()}
+%% @type args() = [integer() | float() | binary() | time() | atom() | time() |
+%%                 rgba() | midi() | true | false | null | impulse | args()]
 %% @type time() = immediately | {Seconds::integer(), Fractions::integer()}
+%% @type rgba() = {R::integer(), G::integer(), B::integer(), A::integer()}
+%% @type midi() = {Port::integer(), Status::integer(), binary(), binary()}
+%% @type bundle() = {bundle, When::time(), [message() | bundle()]}
+
+%% @doc Decodes messages.
+%% @spec decode(Bytes::binary()) -> message() | bundle()
 decode(<<"#bundle", 0, Time:8/binary, Rest/binary>>) ->
     {bundle, decode_time(Time), decode_bundle(Rest, [])};
 decode(<<"/", _/binary>> = Bin) ->
@@ -37,16 +42,23 @@ decode_bundle(<<>>, Acc) ->
 decode_bundle(<<Size:32, Bin:Size/binary, Rest/binary>>, Acc) ->
     decode_bundle(Rest, [decode(Bin)|Acc]).
 
-%% @private Decodes times.
-%% @spec decode_time(binary()) -> time()
+%% @private
+%% @doc Decodes times.
+%% @spec decode_time(Bytes::binary()) -> time()
 decode_time(<<1:64>>) ->
     immediately;
 decode_time(<<Seconds:32, Fractions:32>>) ->
     {Seconds, Fractions}.
 
+%% @private
+%% @doc Decodes a padded and zero-terminated string.
+%% @spec decode_string(Bytes::binary()) -> {String::string(), Rest::binary()}
 decode_string(Bin) ->
     decode_string(Bin, []).
 
+%% @private
+%% @doc Decodes a padded and zero-terminated string.
+%% @spec decode_string(Bytes::binary(), string()) -> {string(), binary()}
 decode_string(<<0, Rest/binary>>, Acc) ->
     L = pad_len(length(Acc) + 1, 4),
     <<_:L/integer-unit:8, Rest1/binary>> = Rest,
@@ -54,26 +66,37 @@ decode_string(<<0, Rest/binary>>, Acc) ->
 decode_string(<<Byte, Rest/binary>>, Acc) ->
     decode_string(Rest, [Byte|Acc]).
 
+%% @hidden
 decode_strings_test_() ->
     [?_assertEqual({"hello", <<>>}, decode_string(<<"hello",0,0,0>>)),
      ?_assertEqual({"hello1", <<>>}, decode_string(<<"hello1",0,0>>)),
      ?_assertEqual({"hello12", <<>>}, decode_string(<<"hello12",0>>)),
      ?_assertEqual({"hello123", <<>>}, decode_string(<<"hello123",0,0,0,0>>))].
 
+%% @private
+%% @doc Zero-pads the binary.
+%% @spec pad(Bytes::binary(), Pad::integer()) -> binary()
 pad(B, P) when is_binary(B), is_integer(P) ->
     L = pad_len(size(B), 4),
     <<B/binary, 0:L/integer-unit:8>>.
 
+%% @private
+%% @doc Returns the length the binary has to be padded by.
+%% @spec pad_len(Length::binary(), Padding::integer()) -> integer()
 pad_len(L, P) when L rem P == 0 ->
     0;
 pad_len(L, P) ->
     P - (L rem P).
 
+%% @private
+%% @doc Decodes a BLOB.
+%% @spec decode_blob(Bytes::binary()) -> {Blob::binary(), Rest::binary()}
 decode_blob(<<Length:32, Bytes:Length/binary, Rest/binary>>) ->
     L = pad_len(Length + 4, 4),
     <<_:L/integer-unit:8, Rest1/binary>> = Rest,
     {Bytes, Rest1}.
 
+%% @hidden
 decode_blobs_test_() ->
     [?_assertEqual({<<>>, <<>>}, decode_blob(<<0,0,0,0>>)),
      ?_assertEqual({<<1>>, <<>>}, decode_blob(<<0,0,0,1,1,0,0,0>>)),
@@ -142,7 +165,13 @@ encode_strings_test_() ->
 
 encode_blob(B) when is_binary(B) ->
     pad(<<(size(B)):32, B/binary>>, 4).
+%% @private
+%% @doc Encodes the BLOB.
+%% @spec encode_blob(binary()) -> Blob::binary()
+encode_blob(Bin) when is_binary(Bin) ->
+    pad(<<(byte_size(Bin)):32, Bin/binary>>, 4).
 
+%% @hidden
 encode_blobs_test_() ->
     [?_assertEqual(<<0,0,0,0>>, encode_blob(<<>>)),
      ?_assertEqual(<<0,0,0,1,1,0,0,0>>, encode_blob(<<1>>)),
