@@ -23,7 +23,7 @@ decode(<<"#bundle", 0, Time:8/binary, Rest/binary>>) ->
     {bundle, decode_time(Time), decode_bundle_elems(Rest, [])};
 decode(<<"/", _/binary>> = Bin) ->
     {Address, Rest1} = decode_string(Bin),
-    {Arguments, _} =
+    {Args, _} =
 	try decode_string(Rest1) of
 	    {[$,|Types], Rest2} ->
 		decode_args(Rest2, Types);
@@ -33,7 +33,7 @@ decode(<<"/", _/binary>> = Bin) ->
 	    _:_ ->
 		{[Rest1], <<>>}
 	end,
-    {message, Address, Arguments}.
+    {message, Address, Args}.
 
 %% @private
 %% @doc Decodes bundle elements.
