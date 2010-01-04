@@ -49,8 +49,8 @@ init([]) ->
 	    Methods = ets:new(osc_methods, [named_table, ordered_set]),
 	    {ok, #state{socket = Socket, methods = Methods}};
 	{error, Reason} ->
-	    error_logger:error_report({?MODULE,udp_open,Reason}),
-	    {stop, Reason}
+	    error_logger:error_report({?MODULE, udp_open, Reason}),
+	    {stop, {?MODULE, udp_open, Reason}}
     end.
 
 %% @private
