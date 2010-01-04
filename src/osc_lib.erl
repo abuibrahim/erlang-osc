@@ -175,8 +175,6 @@ encode_strings_test_() ->
      ?_assertEqual(<<"hello12",0>>, encode_string("hello12")),
      ?_assertEqual(<<"hello123",0,0,0,0>>, encode_string("hello123"))].
 
-encode_blob(B) when is_binary(B) ->
-    pad(<<(size(B)):32, B/binary>>, 4).
 %% @private
 %% @doc Encodes the BLOB.
 %% @spec encode_blob(binary()) -> Blob::binary()
