@@ -1,7 +1,7 @@
 %% -*-Erlang-*-
 {application, osc,
  [{description, "Open Sound Control Application"},
-  {vsn, "@VERSION@"},
+  {vsn, "1.0.0"},
   {modules, [osc_app, osc_sup, osc_lib, osc_server]},
   {registered, [osc_sup, osc_server]},
   {applications, [kernel, stdlib]},

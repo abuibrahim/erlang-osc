@@ -1,6 +1,6 @@
 @author Ruslan Babayev <ruslan@babayev.com>
 @copyright 2009 Ruslan Babayev
-@version @VERSION@
+@version 1.0.0
 @title Erlang Open Sound Control Application 
 @doc This is an Erlang application that implements OSC 1.1 specification.
 Open Sound Control (OSC) is an open, transport-independent, message-based
