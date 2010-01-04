@@ -126,7 +126,8 @@ handle_message(When, Address, Args, Methods) ->
 	[] ->
 	    error_logger:info_report({unhandled,{message,Address,Args}});
 	Matches ->
-	    [timer:apply_after(when_to_msec(When), Module, Function, Args) ||
+	    Time = when_to_millisecs(When),
+	    [timer:apply_after(Time, Module, Function, Args) ||
 		[{Module, Function}] <- Matches]
     end.
 
@@ -152,9 +153,13 @@ make_pattern2([$?|T], Acc) ->
 make_pattern2([H|T], Acc) ->
     make_pattern2(T, [H|Acc]).
 
-when_to_msec(immediately) ->
+%% @private
+%% @doc Converts OSC time to milliseconds.
+%% @spec when_to_millisecs(When) -> integer()
+%%       When = immediately | {Seconds::integer(), Fractions::integer()}
+when_to_millisecs(immediately) ->
     0;
-when_to_msec({Seconds, Fractions}) ->
+when_to_millisecs({Seconds, Fractions}) ->
     {MegaSecs, Secs, MicroSecs} = now(),
     S = (Seconds - 2208988800) - (MegaSecs * 1000000 + Secs),
     F = Fractions - (MicroSecs * 1000000),
