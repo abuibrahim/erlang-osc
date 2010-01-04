@@ -155,11 +155,12 @@ decode_args(Bin, [$[|T], Acc) ->
 decode_args(Bin, [$]|T], Acc) ->
     {lists:reverse(Acc), Bin, T}.
 
-decode_arguments_test() ->
+%% @hidden
+decode_args_test() ->
     Bin = <<1:32,100,97,116,97,0,0,0,0,1:32,4:32,5:32,2:32,3:32>>,
     Types = "is[i[ii]i]i",
     Args = [1,"data",[1,[4,5],2],3],
-    ?assertEqual({Args, <<>>}, decode_arguments(Bin, Types, [])).
+    ?assertEqual({Args, <<>>}, decode_args(Bin, Types, [])).
 
 encode_string(S) when is_list(S) ->
     pad(list_to_binary(S ++ [0]), 4).
