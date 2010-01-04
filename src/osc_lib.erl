@@ -54,17 +54,11 @@ decode_string(<<0, Rest/binary>>, Acc) ->
 decode_string(<<Byte, Rest/binary>>, Acc) ->
     decode_string(Rest, [Byte|Acc]).
 
-decode_string1_test() ->
-    ?assertEqual({"hello", <<>>}, decode_string(<<"hello",0,0,0>>)).
-
-decode_string2_test() ->
-    ?assertEqual({"hello1", <<>>}, decode_string(<<"hello1",0,0>>)).
-
-decode_string3_test() ->
-    ?assertEqual({"hello12", <<>>}, decode_string(<<"hello12",0>>)).
-
-decode_string4_test() ->
-    ?assertEqual({"hello123", <<>>}, decode_string(<<"hello123",0,0,0,0>>)).
+decode_strings_test_() ->
+    [?_assertEqual({"hello", <<>>}, decode_string(<<"hello",0,0,0>>)),
+     ?_assertEqual({"hello1", <<>>}, decode_string(<<"hello1",0,0>>)),
+     ?_assertEqual({"hello12", <<>>}, decode_string(<<"hello12",0>>)),
+     ?_assertEqual({"hello123", <<>>}, decode_string(<<"hello123",0,0,0,0>>))].
 
 pad(B, P) when is_binary(B), is_integer(P) ->
     L = pad_len(size(B), 4),
@@ -80,21 +74,13 @@ decode_blob(<<Length:32, Bytes:Length/binary, Rest/binary>>) ->
     <<_:L/integer-unit:8, Rest1/binary>> = Rest,
     {Bytes, Rest1}.
 
-decode_blob0_test() ->
-    ?assertEqual({<<>>, <<>>}, decode_blob(<<0,0,0,0>>)).
-
-decode_blob1_test() ->
-    ?assertEqual({<<1>>, <<>>}, decode_blob(<<0,0,0,1,1,0,0,0>>)).
-
-decode_blob2_test() ->
-    ?assertEqual({<<1,2>>, <<>>}, decode_blob(<<0,0,0,2,1,2,0,0>>)).
-
-decode_blob3_test() ->
-    ?assertEqual({<<1,2,3>>, <<>>}, decode_blob(<<0,0,0,3,1,2,3,0>>)).
-
-decode_blob4_test() ->
-    ?assertEqual({<<1,2,3,4>>, <<>>}, decode_blob(<<0,0,0,4,1,2,3,4>>)).
-
+decode_blobs_test_() ->
+    [?_assertEqual({<<>>, <<>>}, decode_blob(<<0,0,0,0>>)),
+     ?_assertEqual({<<1>>, <<>>}, decode_blob(<<0,0,0,1,1,0,0,0>>)),
+     ?_assertEqual({<<1,2>>, <<>>}, decode_blob(<<0,0,0,2,1,2,0,0>>)),
+     ?_assertEqual({<<1,2,3>>, <<>>}, decode_blob(<<0,0,0,3,1,2,3,0>>)),
+     ?_assertEqual({<<1,2,3,4>>, <<>>}, decode_blob(<<0,0,0,4,1,2,3,4>>))].
+	
 decode_arguments(Bin, Types) ->
     decode_arguments(Bin, Types, []).
 
@@ -148,32 +134,18 @@ decode_arguments_test() ->
 encode_string(S) when is_list(S) ->
     pad(list_to_binary(S ++ [0]), 4).
 
-encode_string1_test() ->
-    ?assertEqual(<<"hello",0,0,0>>, encode_string("hello")).
-
-encode_string2_test() ->
-    ?assertEqual(<<"hello1",0,0>>, encode_string("hello1")).
-
-encode_string3_test() ->
-    ?assertEqual(<<"hello12",0>>, encode_string("hello12")).
-
-encode_string4_test() ->
-    ?assertEqual(<<"hello123",0,0,0,0>>, encode_string("hello123")).
+encode_strings_test_() ->
+    [?_assertEqual(<<"hello",0,0,0>>, encode_string("hello")),
+     ?_assertEqual(<<"hello1",0,0>>, encode_string("hello1")),
+     ?_assertEqual(<<"hello12",0>>, encode_string("hello12")),
+     ?_assertEqual(<<"hello123",0,0,0,0>>, encode_string("hello123"))].
 
 encode_blob(B) when is_binary(B) ->
     pad(<<(size(B)):32, B/binary>>, 4).
 
-encode_blob0_test() ->
-    ?assertEqual(<<0,0,0,0>>, encode_blob(<<>>)).
-
-encode_blob1_test() ->
-    ?assertEqual(<<0,0,0,1,1,0,0,0>>, encode_blob(<<1>>)).
-
-encode_blob2_test() ->
-    ?assertEqual(<<0,0,0,2,1,2,0,0>>, encode_blob(<<1,2>>)).
-
-encode_blob3_test() ->
-    ?assertEqual(<<0,0,0,3,1,2,3,0>>, encode_blob(<<1,2,3>>)).
-
-encode_blob4_test() ->
-    ?assertEqual(<<0,0,0,4,1,2,3,4>>, encode_blob(<<1,2,3,4>>)).
+encode_blobs_test_() ->
+    [?_assertEqual(<<0,0,0,0>>, encode_blob(<<>>)),
+     ?_assertEqual(<<0,0,0,1,1,0,0,0>>, encode_blob(<<1>>)),
+     ?_assertEqual(<<0,0,0,2,1,2,0,0>>, encode_blob(<<1,2>>)),
+     ?_assertEqual(<<0,0,0,3,1,2,3,0>>, encode_blob(<<1,2,3>>)),
+     ?_assertEqual(<<0,0,0,4,1,2,3,4>>, encode_blob(<<1,2,3,4>>))].
