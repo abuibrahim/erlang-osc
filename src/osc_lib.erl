@@ -20,7 +20,7 @@
 %% @doc Decodes messages.
 %% @spec decode(Bytes::binary()) -> message() | bundle()
 decode(<<"#bundle", 0, Time:8/binary, Rest/binary>>) ->
-    {bundle, decode_time(Time), decode_bundle(Rest, [])};
+    {bundle, decode_time(Time), decode_bundle_elems(Rest, [])};
 decode(<<"/", _/binary>> = Bin) ->
     {Address, Rest1} = decode_string(Bin),
     {Arguments, _} =
@@ -35,12 +35,13 @@ decode(<<"/", _/binary>> = Bin) ->
 	end,
     {message, Address, Arguments}.
 
-%% @private Decodes bundles.
-%% @spec decode_bundle(binary(), list()) -> [bundle()]
-decode_bundle(<<>>, Acc) ->
+%% @private
+%% @doc Decodes bundle elements.
+%% @spec decode_bundle_elems(Bytes::binary(), list()) -> [message() | bundle()]
+decode_bundle_elems(<<>>, Acc) ->
     lists:reverse(Acc);
-decode_bundle(<<Size:32, Bin:Size/binary, Rest/binary>>, Acc) ->
-    decode_bundle(Rest, [decode(Bin)|Acc]).
+decode_bundle_elems(<<Size:32, Bin:Size/binary, Rest/binary>>, Acc) ->
+    decode_bundle_elems(Rest, [decode(Bin)|Acc]).
 
 %% @private
 %% @doc Decodes times.
