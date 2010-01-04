@@ -162,8 +162,11 @@ decode_args_test() ->
     Args = [1,"data",[1,[4,5],2],3],
     ?assertEqual({Args, <<>>}, decode_args(Bin, Types, [])).
 
-encode_string(S) when is_list(S) ->
-    pad(list_to_binary(S ++ [0]), 4).
+%% @private
+%% @doc Encodes the string by zero-terminating it and padding to 4 chars.
+%% @spec encode_string(string()) -> binary()
+encode_string(String) when is_list(String) ->
+    pad(list_to_binary(String ++ [0]), 4).
 
 encode_strings_test_() ->
     [?_assertEqual(<<"hello",0,0,0>>, encode_string("hello")),
