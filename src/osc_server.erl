@@ -20,7 +20,7 @@
 -record(state, {socket, methods}).
 
 %% @doc Starts the server.
-%% @spec start_link() -> {ok, Pid} | ignore | {error, Error}
+%% @spec start_link() -> {ok, Pid} | ignore | {error, Reason}
 start_link() ->
     gen_server:start_link({local, ?SERVER}, ?MODULE, [], []).
 
@@ -102,7 +102,7 @@ handle_info(_Info, State) ->
     {noreply, State}.
 
 %% @private
-%% @doc Terminates the server.
+%% @doc Performs cleanup on termination.
 %% @spec terminate(Reason, State) -> void()
 terminate(_Reason, State) ->
     gen_udp:close(State#state.socket),
@@ -114,7 +114,6 @@ terminate(_Reason, State) ->
 code_change(_OldVsn, State, _Extra) ->
     {ok, State}.
 
-%% @private
 %% @doc Handles OSC messages.
 %% @spec handle_message(When, Address, Args, Methods) -> any()
 %%       When = time()
@@ -131,7 +130,6 @@ handle_message(When, Address, Args, Methods) ->
 		[{Module, Function}] <- Matches]
     end.
 
-%% @private
 %% @doc Converts the OSC address pattern into ETS match spec.
 %% @spec make_pattern(string()) -> tuple()
 make_pattern(Address) ->
@@ -153,7 +151,6 @@ make_pattern2([$?|T], Acc) ->
 make_pattern2([H|T], Acc) ->
     make_pattern2(T, [H|Acc]).
 
-%% @private
 %% @doc Converts OSC time to milliseconds.
 %% @spec when_to_millisecs(When) -> integer()
 %%       When = immediately | {Seconds::integer(), Fractions::integer()}
@@ -170,7 +167,6 @@ when_to_millisecs({Seconds, Fractions}) ->
 	    0
     end.
 
-%% @private
 %% @doc Handles OSC bundles.
 %% @spec handle_bundle(When, Elements, Methods) -> any()
 %%       Elements = [message() | bundle()]

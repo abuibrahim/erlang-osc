@@ -14,14 +14,12 @@
 -export([init/1]).
 
 %% @doc Starts the supervisor.
-%% @spec start_link() -> {ok, Pid} | ignore | {error, Error}
+%% @spec start_link() -> {ok, Pid} | ignore | {error, Reason}
 start_link() ->
     supervisor:start_link({local, ?MODULE}, ?MODULE, []).
 
 %% @doc Initializes the supervisor.
-%% @spec init(Args) -> {ok, {SupFlags, [ChildSpec]}} |
-%%                     ignore |
-%%                     {error, Reason}
+%% @spec init(Args) -> {ok, {SupFlags, ChildSpecs}} | ignore | {error, Reason}
 init([]) ->
     Server = {osc_server, {osc_server, start_link, []},
 	      permanent, 2000, worker, [osc_server]},

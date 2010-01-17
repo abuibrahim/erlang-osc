@@ -35,7 +35,6 @@ decode(<<"/", _/binary>> = Bin) ->
 	end,
     {message, Address, Args}.
 
-%% @private
 %% @doc Decodes bundle elements.
 %% @spec decode_bundle_elems(Bytes::binary(), list()) -> [message() | bundle()]
 decode_bundle_elems(<<>>, Acc) ->
@@ -43,7 +42,6 @@ decode_bundle_elems(<<>>, Acc) ->
 decode_bundle_elems(<<Size:32, Bin:Size/binary, Rest/binary>>, Acc) ->
     decode_bundle_elems(Rest, [decode(Bin)|Acc]).
 
-%% @private
 %% @doc Decodes times.
 %% @spec decode_time(Bytes::binary()) -> time()
 decode_time(<<1:64>>) ->
@@ -51,13 +49,11 @@ decode_time(<<1:64>>) ->
 decode_time(<<Seconds:32, Fractions:32>>) ->
     {Seconds, Fractions}.
 
-%% @private
 %% @doc Decodes a padded and zero-terminated string.
 %% @spec decode_string(Bytes::binary()) -> {String::string(), Rest::binary()}
 decode_string(Bin) ->
     decode_string(Bin, []).
 
-%% @private
 %% @doc Decodes a padded and zero-terminated string.
 %% @spec decode_string(Bytes::binary(), string()) -> {string(), binary()}
 decode_string(<<0, Rest/binary>>, Acc) ->
@@ -74,14 +70,12 @@ decode_strings_test_() ->
      ?_assertEqual({"hello12", <<>>}, decode_string(<<"hello12",0>>)),
      ?_assertEqual({"hello123", <<>>}, decode_string(<<"hello123",0,0,0,0>>))].
 
-%% @private
 %% @doc Zero-pads the binary.
 %% @spec pad(Bytes::binary(), Pad::integer()) -> binary()
 pad(B, P) when is_binary(B), is_integer(P) ->
     L = pad_len(size(B), P),
     <<B/binary, 0:L/integer-unit:8>>.
 
-%% @private
 %% @doc Returns the length the binary has to be padded by.
 %% @spec pad_len(Length::binary(), Padding::integer()) -> integer()
 pad_len(L, P) when L rem P == 0 ->
@@ -89,7 +83,6 @@ pad_len(L, P) when L rem P == 0 ->
 pad_len(L, P) ->
     P - (L rem P).
 
-%% @private
 %% @doc Decodes a BLOB.
 %% @spec decode_blob(Bytes::binary()) -> {Blob::binary(), Rest::binary()}
 decode_blob(<<Length:32, Bytes:Length/binary, Rest/binary>>) ->
@@ -105,13 +98,11 @@ decode_blobs_test_() ->
      ?_assertEqual({<<1,2,3>>, <<>>}, decode_blob(<<0,0,0,3,1,2,3,0>>)),
      ?_assertEqual({<<1,2,3,4>>, <<>>}, decode_blob(<<0,0,0,4,1,2,3,4>>))].
 
-%% @private
 %% @doc Decodes arguments.
 %% @spec decode_args(Bytes::binary(), Types::string()) -> args()
 decode_args(Bin, Types) ->
     decode_args(Bin, Types, []).
 
-%% @private
 %% @doc Decodes arguments.
 %% @spec decode_args(Bytes::binary(), Types::string(), Acc::args()) -> args()
 decode_args(Rest, [], Acc) ->
@@ -162,7 +153,6 @@ decode_args_test() ->
     Args = [1,"data",[1,[4,5],2],3],
     ?assertEqual({Args, <<>>}, decode_args(Bin, Types, [])).
 
-%% @private
 %% @doc Encodes the string by zero-terminating it and padding to 4 chars.
 %% @spec encode_string(string()) -> binary()
 encode_string(String) when is_list(String) ->
@@ -175,7 +165,6 @@ encode_strings_test_() ->
      ?_assertEqual(<<"hello12",0>>, encode_string("hello12")),
      ?_assertEqual(<<"hello123",0,0,0,0>>, encode_string("hello123"))].
 
-%% @private
 %% @doc Encodes the BLOB.
 %% @spec encode_blob(binary()) -> Blob::binary()
 encode_blob(Bin) when is_binary(Bin) ->
