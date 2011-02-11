@@ -1,0 +1,75 @@
+#!/bin/sh
+cd `dirname $0`;
+CWD=`dirname "$PWD" | sed -e 's, ,\\\\ ,g'`;
+cd "$PWD";
+BASENAME=`basename $0`
+MONITOR="false"
+DETACHED_OPTION=""
+COOKIE="cookie"
+ERL=erl
+
+usage() {
+   echo "Usage: $BASENAME [options]";
+}
+
+for _option
+do
+   # If the previous option needs an argument, assign it.
+   if test -n "$_prev"; then
+      eval "$_prev=\$_option"
+      _prev=
+      continue
+   fi
+
+   case "$_option" in
+   -*=*) _optarg=`echo "$_option" | sed 's/[-_a-zA-Z0-9]*=//'` ;;
+   *) _optarg= ;;
+   esac
+
+   case "$_option" in
+
+   --cookie=*)
+      COOKIE="$_optarg" ;;
+
+   --detached | -d)
+      DETACHED_OPTION="-detached" ;;
+
+   --help | -h)
+      usage
+      cat << EOF
+
+Options:
+      --cookie=COOKIE   use this cookie
+   -d,--detached        starts the service detached from the system console
+   -h,--help            display this message
+   -m,--monitor         run monitor
+
+EOF
+   exit 0;;
+
+   --monitor | -m)
+      MONITOR="true" ;;
+
+   --* | -* ) {
+      echo "$BASENAME: illegal option $_option; use --help to show usage" 1>&2;
+      exit 1;
+      };;
+   * )
+      args="$args$_option " ;;
+
+   esac
+done
+
+ERL_OPTS="
+    -setcookie $COOKIE \
+    -pa $CWD/ebin \
+    -sname osc \
+    -s osc"
+
+if [ "$MONITOR" = "false" ]; then
+    eval $ERL $ERL_OPTS $DETACHED_OPTION start -noshell
+else
+    eval $ERL $ERL_OPTS -boot start_sasl -run appmon start
+fi
+
+exit 0;
