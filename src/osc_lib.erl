@@ -1,6 +1,7 @@
 %% @author Ruslan Babayev <ruslan@babayev.com>
+%% @author Tobias Rodaebel <tobias.rodaebel@googlemail.com>
 %% @copyright 2009 Ruslan Babayev
-%% @doc OSC Decoding Library.
+%% @doc OSC Decoding/Encoding Library.
 
 -module(osc_lib).
 -author("ruslan@babayev.com").
@@ -14,8 +15,8 @@
 %% @type args() = [integer() | float() | binary() | time() | atom() | time() |
 %%                 rgba() | midi() | true | false | null | impulse | args()]
 %% @type time() = immediately | {Seconds::integer(), Fractions::integer()}
-%% @type rgba() = {R::integer(), G::integer(), B::integer(), A::integer()}
-%% @type midi() = {Port::integer(), Status::integer(), binary(), binary()}
+%% @type rgba() = {rgba, R::integer(), G::integer(), B::integer(), A::integer()}
+%% @type midi() = {midi, Port::integer(), Status::integer(), binary(), binary()}
 %% @type bundle() = {bundle, When::time(), [message() | bundle()]}
 
 %% @doc Decodes messages.
@@ -130,9 +131,9 @@ decode_args(Bin, [$S|T], Acc) ->
 decode_args(<<Char:32, Rest/binary>>, [$c|T], Acc) ->
     decode_args(Rest, T, [Char|Acc]);
 decode_args(<<R, G, B, A, Rest/binary>>, [$r|T], Acc) ->
-    decode_args(Rest, T, [{R,G,B,A}|Acc]);
+    decode_args(Rest, T, [{rgba,R,G,B,A}|Acc]);
 decode_args(<<Port, Status, Data1, Data2, Rest/binary>>, [$m|T], Acc) ->
-    decode_args(Rest, T, [{Port,Status,Data1,Data2}|Acc]);
+    decode_args(Rest, T, [{midi,Port,Status,Data1,Data2}|Acc]);
 decode_args(Bin, [$T|T], Acc) ->
     decode_args(Bin, T, [true|Acc]);
 decode_args(Bin, [$F|T], Acc) ->
@@ -149,9 +150,9 @@ decode_args(Bin, [$]|T], Acc) ->
 
 %% @hidden
 decode_args_test() ->
-    Bin = <<1:32,100,97,116,97,0,0,0,0,1:32,4:32,5:32,2:32,3:32>>,
-    Types = "is[i[ii]i]i",
-    Args = [1,"data",[1,[4,5],2],3],
+    Bin = <<1:32,102,111,111,0,1:32,4:32,5:32,2:32,3:32,255,255,255,255>>,
+    Types = "is[i[ii]i]ir",
+    Args = [1,"foo",[1,[4,5],2],3,{rgba, 255,255,255,255}],
     ?assertEqual({Args, <<>>}, decode_args(Bin, Types, [])).
 
 %% @doc Encodes times.
