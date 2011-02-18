@@ -205,24 +205,32 @@ is_string_test_() ->
 
 %% @doc Encodes args.
 %% @spec encode_args(Args::args()) -> {Bytes::binary(), Types::string(), Acc}
-encode_args([], B, T) ->
-    {list_to_binary(B), lists:flatten(T), []};
-encode_args([I|Rest], B, T) when is_integer(I) ->
-    encode_args(Rest, [B,<<I:32>>], [T,$i]);
-encode_args([F|Rest], B, T) when is_float(F) ->
-    encode_args(Rest, [B,<<F/float>>], [T,$f]);
-encode_args([L|Rest], B, T) when is_list(L) ->
+encode_args([], Acc) ->
+    list_to_binary(Acc);
+encode_args([{i,I}|Rest], Acc) ->
+    encode_args(Rest, [Acc,<<I:32>>]);
+encode_args([I|Rest], Acc) when is_integer(I) ->
+    encode_args([{i,I}|Rest], Acc);
+encode_args([{f,F}|Rest], Acc) ->
+    encode_args(Rest, [Acc,<<F/float>>]);
+encode_args([F|Rest], Acc) when is_float(F) ->
+    encode_args([{f,F}|Rest], Acc);
+encode_args([{s,S}|Rest], Acc) ->
+    encode_args(Rest, [Acc,encode_string(S)]);
+encode_args([L|Rest], Acc) when is_list(L) ->
     case is_string(L) of
         true ->
-            encode_args(Rest, [B,encode_string(L)], [T,$s]);
+            encode_args([{s,L}|Rest], Acc);
         false ->
-            {Bytes, Types, _} = encode_args(L, [], []),
-            encode_args(Rest, [B,Bytes], [T,$[,Types,$]])
+            Bytes = encode_args(L, []),
+            encode_args(Rest, [Acc,Bytes])
     end.
 
 %% @hidden
 encode_args_test() ->
-    Bin = <<1:32,2:32,256:32,100,97,116,97,0,0,0,0,3:32,2.5/float>>,
-    Types = "i[ii[si]]f",
-    Args = [1,[2,256,["data",3]],2.5],
-    ?assertEqual({Bin, Types, []}, encode_args(Args, [], [])).
+    Bin = <<1:32,2:32,100,97,116,97,0,0,0,0,2.5/float>>,
+    Args = [{i,1},[{i,2},[{s,"data"},{f,2.5}]]],
+    ?assertEqual(Bin, encode_args(Args, [])),
+    Bin2 = <<1:32,2:32,100,97,116,97,0,0,0,0,2.5/float>>,
+    Args2 = [1,[2,["data",2.5]]],
+    ?assertEqual(Bin2, encode_args(Args2, [])).
