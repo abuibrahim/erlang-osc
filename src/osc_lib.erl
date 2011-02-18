@@ -229,8 +229,7 @@ encode_args([L|Rest], Acc) when is_list(L) ->
 %% @hidden
 encode_args_test() ->
     Bin = <<1:32,2:32,100,97,116,97,0,0,0,0,2.5/float>>,
-    Args = [{i,1},[{i,2},[{s,"data"},{f,2.5}]]],
-    ?assertEqual(Bin, encode_args(Args, [])),
-    Bin2 = <<1:32,2:32,100,97,116,97,0,0,0,0,2.5/float>>,
-    Args2 = [1,[2,["data",2.5]]],
-    ?assertEqual(Bin2, encode_args(Args2, [])).
+    A = [{i,1},[{i,2},[{s,"data"},{f,2.5}]]],
+    ?assertEqual(Bin, encode_args(A, [])),
+    B = [1,[2,["data",2.5]]],
+    ?assertEqual(Bin, encode_args(B, [])).
