@@ -4,6 +4,7 @@
 
 -module(osc_lib).
 -author("ruslan@babayev.com").
+-author("tobias.rodaebel@googlemail.com").
 
 -export([decode/1]).
 
@@ -153,6 +154,18 @@ decode_args_test() ->
     Args = [1,"data",[1,[4,5],2],3],
     ?assertEqual({Args, <<>>}, decode_args(Bin, Types, [])).
 
+%% @doc Encodes times.
+%% @spec encode_time(Time::time()) -> binary()
+encode_time(immediately) ->
+    <<1:64>>;
+encode_time({Seconds, Fractions}) ->
+    <<Seconds:32, Fractions:32>>.
+
+%% @hidden
+encode_time_test_() ->
+    [?_assertEqual(<<1:64>>, encode_time(immediately)),
+     ?_assertEqual(<<10:32,5:32>>, encode_time({10, 5}))].
+
 %% @doc Encodes the string by zero-terminating it and padding to 4 chars.
 %% @spec encode_string(string()) -> binary()
 encode_string(String) when is_list(String) ->
@@ -177,3 +190,39 @@ encode_blobs_test_() ->
      ?_assertEqual(<<0,0,0,2,1,2,0,0>>, encode_blob(<<1,2>>)),
      ?_assertEqual(<<0,0,0,3,1,2,3,0>>, encode_blob(<<1,2,3>>)),
      ?_assertEqual(<<0,0,0,4,1,2,3,4>>, encode_blob(<<1,2,3,4>>))].
+
+%% @doc Checks whether a list is a string.
+%% @spec is_string(List) -> true | false
+is_string([]) -> true;
+is_string([H|_]) when not is_integer(H) -> false;
+is_string([_|T]) -> is_string(T);
+is_string(_) -> false.
+
+%% @hidden
+is_string_test_() ->
+    [?_assertEqual(true, is_string("foo")),
+     ?_assertEqual(false, is_string([one,2]))].
+
+%% @doc Encodes args.
+%% @spec encode_args(Args::args()) -> {Bytes::binary(), Types::string(), Acc}
+encode_args([], B, T) ->
+    {list_to_binary(B), lists:flatten(T), []};
+encode_args([I|Rest], B, T) when is_integer(I) ->
+    encode_args(Rest, [B,<<I:32>>], [T,$i]);
+encode_args([F|Rest], B, T) when is_float(F) ->
+    encode_args(Rest, [B,<<F/float>>], [T,$f]);
+encode_args([L|Rest], B, T) when is_list(L) ->
+    case is_string(L) of
+        true ->
+            encode_args(Rest, [B,encode_string(L)], [T,$s]);
+        false ->
+            {Bytes, Types, _} = encode_args(L, [], []),
+            encode_args(Rest, [B,Bytes], [T,$[,Types,$]])
+    end.
+
+%% @hidden
+encode_args_test() ->
+    Bin = <<1:32,2:32,256:32,100,97,116,97,0,0,0,0,3:32,2.5/float>>,
+    Types = "i[ii[si]]f",
+    Args = [1,[2,256,["data",3]],2.5],
+    ?assertEqual({Bin, Types, []}, encode_args(Args, [], [])).
