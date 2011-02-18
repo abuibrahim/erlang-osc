@@ -204,7 +204,10 @@ is_string_test_() ->
      ?_assertEqual(false, is_string([one,2]))].
 
 %% @doc Encodes args.
-%% @spec encode_args(Args::args()) -> {Bytes::binary(), Types::string(), Acc}
+%% @spec encode_args(Args::args()) -> Bytes::binary()
+encode_args(Args) ->
+    encode_args(Args, []).
+
 encode_args([], Acc) ->
     list_to_binary(Acc);
 encode_args([{i,I}|Rest], Acc) ->
@@ -230,6 +233,6 @@ encode_args([L|Rest], Acc) when is_list(L) ->
 encode_args_test() ->
     Bin = <<1:32,2:32,100,97,116,97,0,0,0,0,2.5/float>>,
     A = [{i,1},[{i,2},[{s,"data"},{f,2.5}]]],
-    ?assertEqual(Bin, encode_args(A, [])),
+    ?assertEqual(Bin, encode_args(A)),
     B = [1,[2,["data",2.5]]],
-    ?assertEqual(Bin, encode_args(B, [])).
+    ?assertEqual(Bin, encode_args(B)).
