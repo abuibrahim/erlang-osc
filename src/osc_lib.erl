@@ -7,7 +7,7 @@
 -author("ruslan@babayev.com").
 -author("tobias.rodaebel@googlemail.com").
 
--export([decode/1, encode/1, encode_args/1]).
+-export([decode/1, encode/1]).
 
 -include_lib("eunit/include/eunit.hrl").
 
