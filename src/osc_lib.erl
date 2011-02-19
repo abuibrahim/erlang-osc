@@ -7,14 +7,14 @@
 -author("ruslan@babayev.com").
 -author("tobias.rodaebel@googlemail.com").
 
--export([decode/1]).
+-export([decode/1, encode/1, encode_args/1]).
 
 -include_lib("eunit/include/eunit.hrl").
 
 %% @type message() = {message, Address::string(), args()}
 %% @type args() = [integer() | float() | binary() | time() | atom() | time() |
 %%                 rgba() | midi() | true | false | null | impulse | args()]
-%% @type time() = immediately | {Seconds::integer(), Fractions::integer()}
+%% @type time() = immediately | {time, Seconds::integer(), Fractions::integer()}
 %% @type rgba() = {rgba, R::integer(), G::integer(), B::integer(), A::integer()}
 %% @type midi() = {midi, Port::integer(), Status::integer(), binary(), binary()}
 %% @type bundle() = {bundle, When::time(), [message() | bundle()]}
@@ -49,7 +49,7 @@ decode_bundle_elems(<<Size:32, Bin:Size/binary, Rest/binary>>, Acc) ->
 decode_time(<<1:64>>) ->
     immediately;
 decode_time(<<Seconds:32, Fractions:32>>) ->
-    {Seconds, Fractions}.
+    {time, Seconds, Fractions}.
 
 %% @doc Decodes a padded and zero-terminated string.
 %% @spec decode_string(Bytes::binary()) -> {String::string(), Rest::binary()}
@@ -155,17 +155,35 @@ decode_args_test() ->
     Args = [1,"foo",[1,[4,5],2],3,{rgba, 255,255,255,255}],
     ?assertEqual({Args, <<>>}, decode_args(Bin, Types, [])).
 
+%% @doc Encodes messages.
+%% @spec encode(message()|bundle()) -> Bytes::binary()
+encode({message, Address, Args}) ->
+    Bytes = encode_string(Address),
+    {Data, Types} = encode_args(Args),
+    list_to_binary([<<Bytes/binary>>,[encode_types(Types, []),Data]]).
+
+%% @hidden
+encode_test_() ->
+    Message1 = {message, "/1/play", [1.0]},
+    Result1 = <<47,49,47,112,108,97,121,0,44,102,0,0,63,128,0,0>>,
+    Message2 = {message,"/1/xy1",[1.0,1.0]},
+    Result2 = <<47,49,47,120,121,49,0,0,44,102,102,0,63,128,0,0,63,128,0,0>>,
+    [?_assertEqual(Result1, encode(Message1)),
+     ?_assertEqual(Message1, decode(Result1)),
+     ?_assertEqual(Result2, encode(Message2)),
+     ?_assertEqual(Message2, decode(Result2))].
+
 %% @doc Encodes times.
 %% @spec encode_time(Time::time()) -> binary()
 encode_time(immediately) ->
     <<1:64>>;
-encode_time({Seconds, Fractions}) ->
+encode_time({time, Seconds, Fractions}) ->
     <<Seconds:32, Fractions:32>>.
 
 %% @hidden
 encode_time_test_() ->
     [?_assertEqual(<<1:64>>, encode_time(immediately)),
-     ?_assertEqual(<<10:32,5:32>>, encode_time({10, 5}))].
+     ?_assertEqual(<<10:32,5:32>>, encode_time({time, 10, 5}))].
 
 %% @doc Encodes the string by zero-terminating it and padding to 4 chars.
 %% @spec encode_string(string()) -> binary()
@@ -207,33 +225,75 @@ is_string_test_() ->
 %% @doc Encodes args.
 %% @spec encode_args(Args::args()) -> Bytes::binary()
 encode_args(Args) ->
-    encode_args(Args, []).
+    encode_args(Args, [], []).
 
-encode_args([], Acc) ->
-    list_to_binary(Acc);
-encode_args([{i,I}|Rest], Acc) ->
-    encode_args(Rest, [Acc,<<I:32>>]);
-encode_args([I|Rest], Acc) when is_integer(I) ->
-    encode_args([{i,I}|Rest], Acc);
-encode_args([{f,F}|Rest], Acc) ->
-    encode_args(Rest, [Acc,<<F/float>>]);
-encode_args([F|Rest], Acc) when is_float(F) ->
-    encode_args([{f,F}|Rest], Acc);
-encode_args([{s,S}|Rest], Acc) ->
-    encode_args(Rest, [Acc,encode_string(S)]);
-encode_args([L|Rest], Acc) when is_list(L) ->
+encode_args([], Acc, Types) ->
+    {list_to_binary(Acc), lists:flatten(Types)};
+encode_args([{i,Int32}|Rest], Acc, Types) ->
+    encode_args(Rest, [Acc,<<Int32:32>>], [Types,$i]);
+encode_args([Int32|Rest], Acc, Types) when is_integer(Int32) ->
+    encode_args([{i,Int32}|Rest], Acc, Types);
+encode_args([{f,Float}|Rest], Acc, Types) ->
+    encode_args(Rest, [Acc,<<Float:32/float>>], [Types,$f]);
+encode_args([Float|Rest], Acc, Types) when is_float(Float) ->
+    encode_args([{f,Float}|Rest], Acc, Types);
+encode_args([{s,String}|Rest], Acc, Types) ->
+    encode_args(Rest, [Acc,encode_string(String)], [Types,$s]);
+encode_args([{b,Blob}|Rest], Acc, Types) ->
+    encode_args(Rest, [Acc,encode_blob(Blob)], [Types,$b]);
+encode_args([{h,Int64}|Rest], Acc, Types) ->
+    encode_args(Rest, [Acc,<<Int64:64>>], [Types,$h]);
+encode_args([{time,Seconds,Fractions}|Rest], Acc, Types) ->
+    encode_args(Rest, [Acc,encode_time({time,Seconds,Fractions})], [Types,$t]);
+encode_args([immediately|Rest], Acc, Types) ->
+    encode_args(Rest, [Acc,encode_time(immediately)], [Types,$t]);
+encode_args([{d,Double}|Rest], Acc, Types) ->
+    encode_args(Rest, [Acc,<<Double:64/float>>], [Types,$d]);
+encode_args([true|Rest], Acc, Types) ->
+    encode_args(Rest, [Acc,<<>>], [Types,$T]);
+encode_args([false|Rest], Acc, Types) ->
+    encode_args(Rest, [Acc,<<>>], [Types,$F]);
+encode_args([null|Rest], Acc, Types) ->
+    encode_args(Rest, [Acc,<<>>], [Types,$N]);
+encode_args([impulse|Rest], Acc, Types) ->
+    encode_args(Rest, [Acc,<<>>], [Types,$I]);
+encode_args([Symbol|Rest], Acc, Types) when is_atom(Symbol) ->
+    encode_args(Rest, [Acc,encode_string(atom_to_list(Symbol))], [Types,$S]);
+encode_args([{c,Char}|Rest], Acc, Types) when is_integer(Char) ->
+    encode_args(Rest, [Acc,<<Char:32>>], [Types,$c]);
+encode_args([{rgba,R,G,B,A}|Rest], Acc, Types) ->
+    encode_args(Rest, [Acc,<<R/integer,G/integer,B/integer,A/integer>>],
+                [Types,$r]);
+encode_args([{midi,Port,Status,Data1,Data2}|Rest], Acc, Types) ->
+    encode_args(Rest, [Acc,<<Port/integer,Status/integer,Data1/binary,Data2/binary>>], [Types,$m]);
+encode_args([L|Rest], Acc, Types) when is_list(L) ->
     case is_string(L) of
         true ->
-            encode_args([{s,L}|Rest], Acc);
+            encode_args([{s,L}|Rest], Acc, Types);
         false ->
-            Bytes = encode_args(L, []),
-            encode_args(Rest, [Acc,Bytes])
+            {Bytes, Types2} = encode_args(L, [], []),
+            encode_args(Rest, [Acc,Bytes], [Types,$[,Types2,$]])
     end.
 
 %% @hidden
 encode_args_test() ->
-    Bin = <<1:32,2:32,100,97,116,97,0,0,0,0,2.5/float>>,
-    A = [{i,1},[{i,2},[{s,"data"},{f,2.5}]]],
-    ?assertEqual(Bin, encode_args(A)),
-    B = [1,[2,["data",2.5]]],
-    ?assertEqual(Bin, encode_args(B)).
+    Bin = <<1:32,2:32,1:64,100,97,116,97,0,0,0,0,2.5:32/float,42:64,
+            0,0,0,1,1,0,0,0,102,111,111,0,97:32,255,255,255,255>>,
+    Types = "i[it[sf]h]bScrTFI",
+    A = [{i,1},[{i,2},immediately,[{s,"data"},{f,2.5}],{h,42}],{b,<<1>>},foo,
+         {c,$a},{rgba,255,255,255,255},true,false,impulse],
+    ?assertEqual({Bin, Types}, encode_args(A)),
+    B = [1,[2,immediately,["data",2.5],{h,42}],{b,<<1>>},'foo',{c,$a},
+         {rgba,255,255,255,255},true,false,impulse],
+    ?assertEqual({Bin, Types}, encode_args(B)).
+
+%% @doc Encodes type identifiers
+%% @spec encode_types(Types, []) -> binary()
+encode_types([], Acc) ->
+    pad(list_to_binary([<<$,>>,Acc]), 4);
+encode_types([Type|Rest], Acc) ->
+    encode_types(Rest, [Acc,<<Type/integer>>]).
+
+%% @hidden
+encode_types_test() ->
+    ?assertEqual(<<44,102,102,0>>, encode_types("ff", [])).

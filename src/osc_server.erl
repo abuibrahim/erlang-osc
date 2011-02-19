@@ -153,10 +153,10 @@ make_pattern2([H|T], Acc) ->
 
 %% @doc Converts OSC time to milliseconds.
 %% @spec when_to_millisecs(When) -> integer()
-%%       When = immediately | {Seconds::integer(), Fractions::integer()}
+%%       When = immediately | {time, Seconds::integer(), Fractions::integer()}
 when_to_millisecs(immediately) ->
     0;
-when_to_millisecs({Seconds, Fractions}) ->
+when_to_millisecs({time, Seconds, Fractions}) ->
     {MegaSecs, Secs, MicroSecs} = now(),
     S = (Seconds - 2208988800) - (MegaSecs * 1000000 + Secs),
     F = Fractions - (MicroSecs * 1000000),
@@ -173,7 +173,7 @@ when_to_millisecs({Seconds, Fractions}) ->
 %%       Methods = [method()]
 %%       message() = {message, Address::string(), Args::[any()]}
 %%       bundle() = {bundle, When::time(), [message() | bundle()]}
-%%       time() = immediately | {Seconds::integer(), Fractions::integer()}
+%%       time() = immediately | {time, Seconds::integer(), Fractions::integer()}
 %%       method() = {Module::atom(), Function::atom()}
 handle_bundle(_When, [], _Methods) ->
     ok;
