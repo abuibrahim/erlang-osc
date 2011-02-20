@@ -156,7 +156,10 @@ decode_args_test() ->
     ?assertEqual({Args, <<>>}, decode_args(Bin, Types, [])).
 
 %% @doc Encodes messages.
-%% @spec encode(message()|bundle()) -> Bytes::binary()
+%% @spec encode(Data::message()|bundle()) -> Bytes::binary()
+encode({bundle, Time, Elems}) ->
+    Bin = [[<<"#bundle",0>>,encode_time(Time)], encode_bundle_elems(Elems, [])],
+    list_to_binary(Bin);
 encode({message, Address, Args}) ->
     Bytes = encode_string(Address),
     {Data, Types} = encode_args(Args),
@@ -168,10 +171,34 @@ encode_test_() ->
     Result1 = <<47,49,47,112,108,97,121,0,44,102,0,0,63,128,0,0>>,
     Message2 = {message,"/1/xy1",[1.0,1.0]},
     Result2 = <<47,49,47,120,121,49,0,0,44,102,102,0,63,128,0,0,63,128,0,0>>,
+    Bundle = {bundle, {time, 10, 5},
+              [{message, "/1/play", [1.0]}, {message, "/1/xy1", [1.0,1.0]}]},
+    Result3 = <<35,98,117,110,100,108,101,0,0,0,0,10,0,0,0,5,0,0,0,16,47,49,
+                47,112,108,97,121,0,44,102,0,0,63,128,0,0,0,0,0,20,47,49,47,
+                120,121,49,0,0,44,102,102,0,63,128,0,0,63,128,0,0>>,
     [?_assertEqual(Result1, encode(Message1)),
      ?_assertEqual(Message1, decode(Result1)),
      ?_assertEqual(Result2, encode(Message2)),
-     ?_assertEqual(Message2, decode(Result2))].
+     ?_assertEqual(Message2, decode(Result2)),
+     ?_assertEqual(Result3, encode(Bundle)),
+     ?_assertEqual(Bundle, decode(Result3))].
+
+%% @doc Encodes bundle elements.
+%% @spec encode_bundle_elems([message() | bundle()], list()) -> binary()
+encode_bundle_elems([], Acc) ->
+    list_to_binary(lists:reverse(Acc));
+encode_bundle_elems([Element|Rest], Acc) ->
+    Bin = encode(Element),
+    Size = size(Bin),
+    encode_bundle_elems(Rest, [[<<Size:32,Bin:Size/binary>>]|Acc]).
+
+%% @hidden
+encode_bundle_elems_test_() ->
+    Messages = [{message, "/1/play", [1.0]}, {message, "/1/xy1", [1.0,1.0]}],
+    Result = <<0,0,0,16,47,49,47,112,108,97,121,0,44,102,0,0,63,128,0,0,
+    0,0,0,20,47,49,47,120,121,49,0,0,44,102,102,0,63,128,0,0,63,128,0,0>>,
+    [?_assertEqual(Result, encode_bundle_elems(Messages, [])),
+     ?_assertEqual(Messages, decode_bundle_elems(Result, []))].
 
 %% @doc Encodes times.
 %% @spec encode_time(Time::time()) -> binary()
